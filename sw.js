@@ -1,5 +1,5 @@
 const CACHE_NAME = 'estateos-v1';
-const ASSETS = ['estateos.html', 'manifest.json', 'icon.svg'];
+const ASSETS = ['index.html', 'manifest.json', 'icon.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
