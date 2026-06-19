@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>EstateOS — Real Estate Agency Platform</title>
+<meta name="description" content="Multi-tenant SaaS for real estate agencies: listings, CRM, agents and commissions.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#14181F">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --ink:#14181F; --ink2:#1D2330; --ink3:#262D3D;
+  --paper:#F7F4EC; --paper2:#FFFFFF; --paper3:#EFEADA;
+  --brass:#C9972E; --brass-dark:#A87B1F; --brass-light:#E8C879;
+  --sage:#4F6F52; --sage-bg:#E7EEE3;
+  --clay:#B5563C; --clay-bg:#F3E2DB;
+  --slate:#5B6472; --line:#E1DAC6; --line-dark:#333B4D;
+  --danger:#A6402C;
+  --font-display:'Fraunces',serif; --font-body:'Work Sans',sans-serif; --font-mono:'IBM Plex Mono',monospace;
+  --r:10px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4{font-family:var(--font-display);margin:0;font-weight:600;letter-spacing:-0.01em;}
+p{margin:0;}
+a{color:inherit;text-decoration:none;}
+button{font-family:var(--font-body);cursor:pointer;}
+input,select,textarea{font-family:var(--font-body);}
+::selection{background:var(--brass-light);}
+.mono{font-family:var(--font-mono);}
+#app{min-height:100vh;}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--paper2);color:var(--ink);
+  padding:9px 16px;border-radius:8px;font-size:13.5px;font-weight:600;transition:.15s;white-space:nowrap;}
+.btn:hover{border-color:var(--slate);}
+.btn-primary{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.btn-primary:hover{background:var(--ink2);}
+.btn-brass{background:var(--brass);color:var(--ink);border-color:var(--brass);}
+.btn-brass:hover{background:var(--brass-dark);color:#fff;}
+.btn-ghost{background:transparent;border-color:transparent;}
+.btn-ghost:hover{background:rgba(0,0,0,.05);}
+.btn-danger{background:var(--paper2);color:var(--danger);border-color:var(--clay-bg);}
+.btn-danger:hover{background:var(--clay-bg);}
+.btn-sm{padding:6px 11px;font-size:12.5px;border-radius:6px;}
+.btn-block{width:100%;justify-content:center;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+/* ---------- Badges ---------- */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  padding:4px 9px;border-radius:99px;}
+.badge-sage{background:var(--sage-bg);color:var(--sage);}
+.badge-clay{background:var(--clay-bg);color:var(--clay);}
+.badge-brass{background:#F6E8C7;color:var(--brass-dark);}
+.badge-slate{background:#E7E9ED;color:var(--slate);}
+.badge-ink{background:var(--ink);color:var(--paper);}
+
+/* ---------- App shell ---------- */
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:248px;background:var(--ink);color:var(--paper);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;}
+.sidebar-brand{padding:22px 22px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line-dark);}
+.sidebar-brand .mark{width:30px;height:30px;border-radius:7px;background:var(--brass);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;color:var(--ink);font-size:16px;flex-shrink:0;}
+.sidebar-brand .name{font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--paper);}
+.sidebar-brand .sub{font-size:10.5px;color:#8B93A3;letter-spacing:.06em;text-transform:uppercase;margin-top:1px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:14px 12px;}
+.nav-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#727B8E;padding:14px 12px 6px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#C7CCD6;font-size:13.5px;font-weight:500;margin-bottom:2px;}
+.nav-item .ic{font-size:15px;width:18px;text-align:center;}
+.nav-item:hover{background:var(--ink3);color:#fff;cursor:pointer;}
+.nav-item.active{background:var(--brass);color:var(--ink);font-weight:700;}
+.sidebar-foot{padding:14px;border-top:1px solid var(--line-dark);}
+.user-chip{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;}
+.user-chip .av{width:32px;height:32px;border-radius:50%;background:var(--ink3);color:var(--paper);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+.user-chip .meta{flex:1;min-width:0;}
+.user-chip .nm{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-chip .rl{font-size:11px;color:#8B93A3;}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--line);background:var(--paper2);position:sticky;top:0;z-index:5;}
+.topbar h1{font-size:20px;}
+.topbar .crumbs{font-size:12px;color:var(--slate);margin-top:2px;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.view{padding:26px 28px 60px;}
+.hamburger{display:none;}
+
+/* ---------- Grids / cards ---------- */
+.grid{display:grid;gap:16px;}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+.card{background:var(--paper2);border:1px solid var(--line);border-radius:var(--r);padding:18px;}
+.stat-card{background:var(--paper2);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;}
+.stat-card .lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--slate);font-weight:600;}
+.stat-card .val{font-family:var(--font-display);font-size:27px;margin-top:6px;}
+.stat-card .sub{font-size:12px;color:var(--slate);margin-top:4px;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:28px 0 14px;}
+.section-head:first-child{margin-top:0;}
+.section-head h2{font-size:16px;}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.card-head h3{font-size:14.5px;}
+.empty{padding:40px 20px;text-align:center;color:var(--slate);font-size:13.5px;}
+.empty .big{font-size:30px;margin-bottom:8px;}
+
+/* ---------- Tables ---------- */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--paper2);}
+table{width:100%;border-collapse:collapse;font-size:13.5px;}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--slate);font-weight:700;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--paper3);white-space:nowrap;}
+td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#FBFAF6;}
+.tname{font-weight:600;}
+.tsub{font-size:11.5px;color:var(--slate);}
+.row-actions{display:flex;gap:6px;}
+
+/* ---------- Filters / toolbar ---------- */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;}
+.toolbar input, .toolbar select{padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--paper2);}
+.toolbar .spacer{flex:1;}
+.search-box{position:relative;}
+.search-box input{padding-left:30px;min-width:200px;}
+.search-box .ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--slate);font-size:13px;}
+
+/* ---------- Forms / modal ---------- */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--slate);margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em;}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--paper2);color:var(--ink);}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--brass);border-color:var(--brass);}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.hint{font-size:11.5px;color:var(--slate);margin-top:4px;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(20,24,31,.55);display:flex;align-items:flex-start;justify-content:center;
+  padding:40px 16px;overflow-y:auto;z-index:100;}
+.modal{background:var(--paper2);border-radius:14px;width:100%;max-width:560px;padding:26px 26px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal.wide{max-width:760px;}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.modal-head h3{font-size:18px;}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;border-top:1px solid var(--line);padding-top:16px;}
+
+/* ---------- Property tag card (signature element) ---------- */
+.prop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(266px,1fr));gap:18px;}
+.prop-card{position:relative;background:var(--paper2);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:.15s;}
+.prop-card:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(20,24,31,.1);}
+.prop-art{height:148px;display:flex;align-items:center;justify-content:center;font-size:46px;position:relative;}
+.prop-tag{position:absolute;top:12px;left:-6px;background:var(--brass);color:var(--ink);font-family:var(--font-mono);font-size:10.5px;
+  font-weight:700;letter-spacing:.06em;padding:5px 12px 5px 16px;border-radius:0 4px 4px 0;
+  box-shadow:0 2px 6px rgba(0,0,0,.18);}
+.prop-tag::before{content:'';position:absolute;left:0;top:0;bottom:0;width:6px;background:repeating-linear-gradient(180deg,var(--brass-dark) 0 3px,transparent 3px 6px);}
+.prop-tag.sold,.prop-tag.rented{background:var(--ink);color:var(--paper);}
+.prop-tag.sold::before,.prop-tag.rented::before{background:repeating-linear-gradient(180deg,#000 0 3px,transparent 3px 6px);}
+.prop-featured{position:absolute;top:12px;right:12px;background:var(--ink);color:var(--brass-light);font-size:10px;font-weight:700;
+  padding:4px 9px;border-radius:99px;letter-spacing:.04em;}
+.prop-body{padding:14px 16px 16px;}
+.prop-price{font-family:var(--font-mono);font-size:18px;font-weight:600;color:var(--ink);}
+.prop-price span{font-size:11px;color:var(--slate);font-weight:500;}
+.prop-title{font-size:14px;font-weight:600;margin-top:5px;}
+.prop-loc{font-size:12px;color:var(--slate);margin-top:2px;}
+.prop-meta{display:flex;gap:12px;margin-top:10px;font-size:12px;color:var(--slate);font-family:var(--font-mono);}
+.prop-foot{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);}
+.prop-agent{font-size:11.5px;color:var(--slate);}
+
+/* ---------- Kanban ---------- */
+.kanban{display:grid;grid-template-columns:repeat(6,minmax(200px,1fr));gap:12px;overflow-x:auto;}
+.kanban-col{background:var(--paper3);border-radius:10px;padding:10px;min-width:200px;}
+.kanban-col-head{display:flex;justify-content:space-between;align-items:center;padding:4px 6px 10px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--slate);}
+.kanban-card{background:var(--paper2);border:1px solid var(--line);border-radius:8px;padding:10px 11px;margin-bottom:8px;font-size:12.5px;cursor:pointer;}
+.kanban-card:hover{border-color:var(--brass);}
+.kanban-card .kn{font-weight:700;font-size:13px;}
+.kanban-card .ks{color:var(--slate);font-size:11.5px;margin-top:3px;}
+.kanban-card select{margin-top:8px;width:100%;font-size:11px;padding:5px 6px;}
+
+/* ---------- Public site ---------- */
+.pub-hero{background:var(--ink);color:var(--paper);padding:70px 28px 56px;text-align:center;}
+.pub-hero h1{font-size:42px;color:#fff;max-width:680px;margin:0 auto;}
+.pub-hero p{color:#AEB5C2;margin-top:12px;font-size:15.5px;}
+.pub-search{max-width:760px;margin:26px auto 0;background:var(--paper2);border-radius:12px;padding:14px;display:flex;gap:10px;flex-wrap:wrap;box-shadow:0 16px 40px rgba(0,0,0,.25);}
+.pub-search select,.pub-search input{flex:1;min-width:120px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--ink);background:var(--paper2);}
+.pub-body{max-width:1180px;margin:0 auto;padding:36px 24px 70px;}
+.pub-topnav{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;background:var(--ink);}
+.pub-topnav .brandnm{font-family:var(--font-display);color:#fff;font-size:18px;display:flex;align-items:center;gap:8px;}
+.pub-topnav .brandnm .mark{width:26px;height:26px;border-radius:6px;background:var(--brass);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;}
+
+/* ---------- Login / landing ---------- */
+.land{min-height:100vh;background:var(--ink);display:flex;align-items:center;justify-content:center;padding:40px 18px;}
+.land-card{max-width:920px;width:100%;display:grid;grid-template-columns:1.1fr 1fr;background:var(--paper2);border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.4);}
+.land-side{background:linear-gradient(160deg,#1A2030,var(--ink) 60%);color:var(--paper);padding:46px 38px;display:flex;flex-direction:column;justify-content:space-between;}
+.land-side .mark{width:42px;height:42px;border-radius:9px;background:var(--brass);color:var(--ink);font-family:var(--font-display);font-weight:700;font-size:21px;display:flex;align-items:center;justify-content:center;}
+.land-side h1{font-size:30px;color:#fff;margin-top:22px;line-height:1.15;}
+.land-side p{color:#9AA2B3;font-size:13.5px;margin-top:12px;line-height:1.55;}
+.land-side .feat{font-size:12.5px;color:#C7CCD6;margin-top:8px;display:flex;gap:8px;align-items:flex-start;}
+.land-main{padding:42px 38px;}
+.role-pick{border:1px solid var(--line);border-radius:10px;padding:13px 14px;display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.role-pick:hover{border-color:var(--brass);background:#FBF7EC;cursor:pointer;}
+.role-pick .ic{font-size:20px;width:30px;text-align:center;}
+.role-pick .t{font-weight:700;font-size:13.5px;}
+.role-pick .d{font-size:11.5px;color:var(--slate);}
+
+/* ---------- Misc ---------- */
+.divider{height:1px;background:var(--line);margin:20px 0;}
+.tag-pill{display:inline-block;background:var(--paper3);border:1px solid var(--line);font-size:11px;padding:3px 9px;border-radius:99px;margin-right:5px;color:var(--slate);font-weight:600;}
+.progress{height:7px;background:var(--paper3);border-radius:99px;overflow:hidden;}
+.progress > div{height:100%;background:var(--brass);}
+.progress.danger > div{background:var(--clay);}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:9px;font-size:13px;
+  font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.3);z-index:200;display:flex;align-items:center;gap:8px;}
+.notes-list{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:10px;}
+.note-item{background:var(--paper3);border-radius:8px;padding:9px 11px;font-size:12.5px;}
+.note-item .nd{font-size:10.5px;color:var(--slate);margin-top:3px;}
+svg.chart text{font-family:var(--font-mono);}
+
+@media (max-width:880px){
+  .grid-4{grid-template-columns:repeat(2,1fr);}
+  .grid-3{grid-template-columns:repeat(2,1fr);}
+  .grid-2{grid-template-columns:1fr;}
+  .field-row,.field-row3{grid-template-columns:1fr;}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);transition:.2s;z-index:60;}
+  .sidebar.open{transform:translateX(0);}
+  .hamburger{display:flex;}
+  .land-card{grid-template-columns:1fr;}
+  .land-side{display:none;}
+  .kanban{grid-template-columns:1fr;}
+  .pub-hero h1{font-size:30px;}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toastHost"></div>
+<script>
+/* ===================== EstateOS — app logic ===================== */
+const STORAGE_KEY = 'EOS_v1';
+
+const PLANS = {
+  starter:{ key:'starter', name:'Starter', priceMYR:299, priceSGD:95, maxAgents:3, maxListings:20, analytics:false, pdfExport:false, featured:false },
+  pro:    { key:'pro',     name:'Pro',     priceMYR:899, priceSGD:280, maxAgents:Infinity, maxListings:Infinity, analytics:true, pdfExport:true, featured:true }
+};
+const STAGES = ['New','Contacted','Viewing Scheduled','Negotiation','Closed Won','Closed Lost'];
+const PROP_ICON = { Condo:'🏢', Apartment:'🏬', Landed:'🏠', Terrace:'🏘️', Bungalow:'🏡', Commercial:'🏛️', Land:'🌳' };
+const STAT_BADGE = { Available:'sage', 'Under Offer':'brass', Sold:'ink', Rented:'ink' };
+
+function uid(p){ return p + '_' + Math.random().toString(36).slice(2,9); }
+function nowISO(){ return new Date().toISOString(); }
+function daysAgo(n){ const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString(); }
+function fmtDate(iso){ if(!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmtDateTime(iso){ if(!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + ', ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
+function fmtMoney(amount, currency){
+  const n = Math.round(amount||0).toLocaleString('en-US');
+  return (currency||'MYR') + ' ' + n;
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function blankDB(){
+  return { agencies:[], agents:[], listings:[], leads:[], viewings:[], deals:[], session:{ area:'login' } };
+}
+
+function loadDB(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function saveDB(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(DB)); }
+
+function seedDB(){
+  const db = blankDB();
+
+  db.agencies = [
+    { id:'agcy_maju', name:'Maju Property Group', country:'Malaysia', city:'Kuala Lumpur', currency:'MYR', plan:'pro', status:'active', commissionRate:2.5, agentSplit:70, createdAt:daysAgo(220) },
+    { id:'agcy_lion', name:'Lion City Realty', country:'Singapore', city:'Singapore', currency:'SGD', plan:'starter', status:'active', commissionRate:1.5, agentSplit:60, createdAt:daysAgo(95) }
+  ];
+
+  db.agents = [
+    { id:'agt_amirul', agencyId:'agcy_maju', name:'Amirul Hakim', email:'amirul@majuproperty.my', phone:'+60 12-345 6781', status:'active', joinedAt:daysAgo(210) },
+    { id:'agt_siti', agencyId:'agcy_maju', name:'Siti Nadhirah', email:'siti@majuproperty.my', phone:'+60 12-345 6782', status:'active', joinedAt:daysAgo(180) },
+    { id:'agt_wong', agencyId:'agcy_maju', name:'Wong Kah Meng', email:'wong@majuproperty.my', phone:'+60 12-345 6783', status:'active', joinedAt:daysAgo(140) },
+    { id:'agt_jasmine', agencyId:'agcy_lion', name:'Jasmine Tan', email:'jasmine@lioncityrealty.sg', phone:'+65 8123 4561', status:'active', joinedAt:daysAgo(90) },
+    { id:'agt_rajesh', agencyId:'agcy_lion', name:'Rajesh Kumar', email:'rajesh@lioncityrealty.sg', phone:'+65 8123 4562', status:'active', joinedAt:daysAgo(60) }
+  ];
+
+  const L = (o) => ({ id:uid('lst'), status:'Available', featured:false, photosNote:'', createdAt:daysAgo(Math.floor(Math.random()*120)), ...o });
+  db.listings = [
+    L({agencyId:'agcy_maju',agentId:'agt_amirul',title:'Mont Kiara Skyline Residence',listingType:'sale',propertyType:'Condo',price:980000,currency:'MYR',country:'Malaysia',state:'Kuala Lumpur',city:'Mont Kiara',address:'Jalan Kiara 3',bedrooms:3,bathrooms:2,sqft:1450,featured:true,description:'High-floor unit with KL skyline views, fully renovated kitchen, two covered parking bays.'}),
+    L({agencyId:'agcy_maju',agentId:'agt_amirul',title:'Bangsar South Loft',listingType:'rent',propertyType:'Apartment',price:3200,currency:'MYR',country:'Malaysia',state:'Kuala Lumpur',city:'Bangsar South',address:'Kerinchi Link',bedrooms:2,bathrooms:2,sqft:980,description:'Modern loft near MRT, fully furnished, pool and gym access.'}),
+    L({agencyId:'agcy_maju',agentId:'agt_siti',title:'Damansara Heights Bungalow',listingType:'sale',propertyType:'Bungalow',price:6200000,currency:'MYR',country:'Malaysia',state:'Kuala Lumpur',city:'Damansara Heights',address:'Jalan Setiabakti',bedrooms:6,bathrooms:6,sqft:5800,featured:true,description:'Freehold corner bungalow, private pool, mature landscaped garden.'}),
+    L({agencyId:'agcy_maju',agentId:'agt_siti',title:'Subang Jaya Family Terrace',listingType:'sale',propertyType:'Terrace',price:720000,currency:'MYR',country:'Malaysia',state:'Selangor',city:'Subang Jaya',address:'Jalan USJ 9',bedrooms:4,bathrooms:3,sqft:1900,status:'Under Offer',description:'Renovated double-storey terrace, walking distance to USJ schools.'}),
+    L({agencyId:'agcy_maju',agentId:'agt_wong',title:'Penang Georgetown Heritage Shoplot',listingType:'sale',propertyType:'Commercial',price:1450000,currency:'MYR',country:'Malaysia',state:'Penang',city:'George Town',address:'Lebuh Armenian',bedrooms:0,bathrooms:2,sqft:2200,description:'Pre-war shoplot in UNESCO heritage zone, ground floor cafe potential.'}),
+    L({agencyId:'agcy_maju',agentId:'agt_wong',title:'Penang Batu Ferringhi Sea View Condo',listingType:'rent',propertyType:'Condo',price:2800,currency:'MYR',country:'Malaysia',state:'Penang',city:'Batu Ferringhi',address:'Jalan Batu Ferringhi',bedrooms:2,bathrooms:2,sqft:1100,description:'Beachfront condo with infinity pool overlooking the Straits of Malacca.'}),
+    L({agencyId:'agcy_maju',agentId:'agt_amirul',title:'Iskandar Puteri Vacant Land',listingType:'sale',propertyType:'Land',price:1850000,currency:'MYR',country:'Malaysia',state:'Johor',city:'Iskandar Puteri',address:'Persiaran Medini',bedrooms:0,bathrooms:0,sqft:43560,description:'Commercial-titled vacant land near Legoland, 1 acre, flat terrain.'}),
+    L({agencyId:'agcy_maju',agentId:'agt_siti',title:'KLCC Serviced Suite',listingType:'sale',propertyType:'Condo',price:1650000,currency:'MYR',country:'Malaysia',state:'Kuala Lumpur',city:'KLCC',address:'Jalan Pinang',bedrooms:2,bathrooms:2,sqft:1180,status:'Sold',featured:true,description:'Twin-tower view serviced suite, dual key layout, fully furnished.'}),
+    L({agencyId:'agcy_maju',agentId:'agt_wong',title:'Cyberjaya Tech Park Office',listingType:'rent',propertyType:'Commercial',price:5400,currency:'MYR',country:'Malaysia',state:'Selangor',city:'Cyberjaya',address:'Persiaran APEC',bedrooms:0,bathrooms:2,sqft:3000,description:'Grade A office floor, raised flooring, MSC-status building.'}),
+    L({agencyId:'agcy_maju',agentId:'agt_amirul',title:'Ampang Hilir Semi-D',listingType:'sale',propertyType:'Bungalow',price:3100000,currency:'MYR',country:'Malaysia',state:'Kuala Lumpur',city:'Ampang Hilir',address:'Jalan Ampang Hilir',bedrooms:5,bathrooms:4,sqft:3600,description:'Semi-detached with private lift, gated guarded enclave.'}),
+
+    L({agencyId:'agcy_lion',agentId:'agt_jasmine',title:'Marina Bay Sky Suite',listingType:'sale',propertyType:'Condo',price:2850000,currency:'SGD',country:'Singapore',state:'Singapore',city:'Marina Bay',address:'Marina Boulevard',bedrooms:3,bathrooms:2,sqft:1280,featured:true,description:'High floor, unblocked marina view, walk to Raffles Place MRT.'}),
+    L({agencyId:'agcy_lion',agentId:'agt_jasmine',title:'Tiong Bahru Conservation Walk-up',listingType:'rent',propertyType:'Apartment',price:4200,currency:'SGD',country:'Singapore',state:'Singapore',city:'Tiong Bahru',address:'Eng Hoon Street',bedrooms:2,bathrooms:1,sqft:850,description:'Art-deco conservation unit, cafe district, fully furnished.'}),
+    L({agencyId:'agcy_lion',agentId:'agt_rajesh',title:'Sentosa Cove Waterfront Bungalow',listingType:'sale',propertyType:'Bungalow',price:9800000,currency:'SGD',country:'Singapore',state:'Singapore',city:'Sentosa Cove',address:'Cove Drive',bedrooms:5,bathrooms:6,sqft:6200,featured:true,description:'Private berth waterfront bungalow with rooftop terrace.'}),
+    L({agencyId:'agcy_lion',agentId:'agt_rajesh',title:'Jurong East Resale Flat',listingType:'sale',propertyType:'Apartment',price:680000,currency:'SGD',country:'Singapore',state:'Singapore',city:'Jurong East',address:'Jurong East Street 21',bedrooms:3,bathrooms:2,sqft:1050,status:'Under Offer',description:'High floor resale unit near JEM mall and MRT interchange.'}),
+    L({agencyId:'agcy_lion',agentId:'agt_jasmine',title:'Orchard Boulevard Retail Unit',listingType:'rent',propertyType:'Commercial',price:18000,currency:'SGD',country:'Singapore',state:'Singapore',city:'Orchard',address:'Orchard Boulevard',bedrooms:0,bathrooms:1,sqft:1500,description:'Ground floor retail frontage on prime Orchard stretch.'}),
+    L({agencyId:'agcy_lion',agentId:'agt_rajesh',title:'Punggol Waterway EC',listingType:'sale',propertyType:'Apartment',price:1120000,currency:'SGD',country:'Singapore',state:'Singapore',city:'Punggol',address:'Punggol Way',bedrooms:4,bathrooms:3,sqft:1300,description:'Executive condo facing Punggol waterway, near LRT.'})
+  ];
+
+  const N = (text, days) => ({ text, date: daysAgo(days) });
+  db.leads = [
+    { id:'led_001', agencyId:'agcy_maju', agentId:'agt_amirul', listingId:db.listings[0].id, name:'Chong Wei Liang', email:'weiliang.c@gmail.com', phone:'+60 16-220 3344', source:'Public Inquiry', stage:'Negotiation', notes:[N('Viewed unit, loves the view. Negotiating on price.',3), N('Initial inquiry via website.',12)], createdAt:daysAgo(12), updatedAt:daysAgo(3) },
+    { id:'led_002', agencyId:'agcy_maju', agentId:'agt_amirul', listingId:db.listings[1].id, name:'Farah Adlina', email:'farah.adlina@yahoo.com', phone:'+60 19-887 1122', source:'Referral', stage:'Viewing Scheduled', notes:[N('Scheduled viewing for Saturday 3pm.',1)], createdAt:daysAgo(6), updatedAt:daysAgo(1) },
+    { id:'led_003', agencyId:'agcy_maju', agentId:'agt_siti', listingId:db.listings[2].id, name:'Dato Hashim Razak', email:'hashim.r@corp.com.my', phone:'+60 12-661 9090', source:'Referral', stage:'Contacted', notes:[N('Called to discuss financing options.',2)], createdAt:daysAgo(20), updatedAt:daysAgo(2) },
+    { id:'led_004', agencyId:'agcy_maju', agentId:'agt_siti', listingId:db.listings[3].id, name:'Mei Ling Tan', email:'meiling.tan@gmail.com', phone:'+60 17-552 4433', source:'Public Inquiry', stage:'Closed Won', notes:[N('Deal closed, S&P signed.',9)], createdAt:daysAgo(35), updatedAt:daysAgo(9) },
+    { id:'led_005', agencyId:'agcy_maju', agentId:'agt_wong', listingId:db.listings[4].id, name:'Lim Chee Keong', email:'cheekeong.lim@bizmail.com', phone:'+60 13-776 8899', source:'Walk-in', stage:'New', notes:[], createdAt:daysAgo(2), updatedAt:daysAgo(2) },
+    { id:'led_006', agencyId:'agcy_maju', agentId:'agt_wong', listingId:db.listings[5].id, name:'Aisyah Rahman', email:'aisyah.r@gmail.com', phone:'+60 18-220 7766', source:'Social Media', stage:'New', notes:[], createdAt:daysAgo(1), updatedAt:daysAgo(1) },
+    { id:'led_007', agencyId:'agcy_maju', agentId:'agt_amirul', listingId:db.listings[7].id, name:'Robert Goh', email:'robert.goh@outlook.com', phone:'+60 12-998 3321', source:'Public Inquiry', stage:'Closed Lost', notes:[N('Decided to buy elsewhere, budget mismatch.',15)], createdAt:daysAgo(40), updatedAt:daysAgo(15) },
+    { id:'led_008', agencyId:'agcy_lion', agentId:'agt_jasmine', listingId:db.listings[10].id, name:'Marcus Lee', email:'marcus.lee@gmail.com', phone:'+65 9123 4501', source:'Public Inquiry', stage:'Negotiation', notes:[N('Offer submitted, awaiting seller response.',2)], createdAt:daysAgo(14), updatedAt:daysAgo(2) },
+    { id:'led_009', agencyId:'agcy_lion', agentId:'agt_rajesh', listingId:db.listings[12].id, name:'Priya Sharma', email:'priya.sharma@gmail.com', phone:'+65 9123 4502', source:'Referral', stage:'Viewing Scheduled', notes:[N('Viewing booked for next Tuesday.',1)], createdAt:daysAgo(8), updatedAt:daysAgo(1) },
+    { id:'led_010', agencyId:'agcy_lion', agentId:'agt_rajesh', listingId:db.listings[13].id, name:'Daniel Ong', email:'daniel.ong@gmail.com', phone:'+65 9123 4503', source:'Public Inquiry', stage:'Closed Won', notes:[N('Resale completed.',5)], createdAt:daysAgo(28), updatedAt:daysAgo(5) },
+    { id:'led_011', agencyId:'agcy_lion', agentId:'agt_jasmine', listingId:db.listings[14].id, name:'Grace Lim', email:'grace.lim@gmail.com', phone:'+65 9123 4504', source:'Social Media', stage:'Contacted', notes:[N('Following up on retail unit lease terms.',3)], createdAt:daysAgo(10), updatedAt:daysAgo(3) }
+  ];
+
+  db.viewings = [
+    { id:'vw_001', agencyId:'agcy_maju', agentId:'agt_amirul', leadId:'led_002', listingId:db.listings[1].id, datetime:daysAgo(-2), status:'Scheduled', notes:'Bring floor plan printout.' },
+    { id:'vw_002', agencyId:'agcy_maju', agentId:'agt_amirul', leadId:'led_001', listingId:db.listings[0].id, datetime:daysAgo(4), status:'Completed', notes:'Buyer liked the view, follow up on price.' },
+    { id:'vw_003', agencyId:'agcy_maju', agentId:'agt_wong', leadId:'led_006', listingId:db.listings[5].id, datetime:daysAgo(-5), status:'Scheduled', notes:'' },
+    { id:'vw_004', agencyId:'agcy_lion', agentId:'agt_rajesh', leadId:'led_009', listingId:db.listings[12].id, datetime:daysAgo(-1), status:'Scheduled', notes:'Client arriving with financial advisor.' },
+    { id:'vw_005', agencyId:'agcy_lion', agentId:'agt_jasmine', leadId:'led_008', listingId:db.listings[10].id, datetime:daysAgo(9), status:'Completed', notes:'Made an offer after viewing.' },
+    { id:'vw_006', agencyId:'agcy_maju', agentId:'agt_siti', leadId:'led_003', listingId:db.listings[2].id, datetime:daysAgo(-7), status:'Scheduled', notes:'Second viewing with spouse.' }
+  ];
+
+  function makeDeal(o){
+    const agency = db.agencies.find(a=>a.id===o.agencyId);
+    const rate = o.commissionRate ?? agency.commissionRate;
+    const split = o.agentSplit ?? agency.agentSplit;
+    const agencyCommission = o.salePrice * rate / 100;
+    const agentCommission = agencyCommission * split / 100;
+    return { id:uid('deal'), commissionRate:rate, agentSplit:split, agencyCommission, agentCommission, payoutStatus:'Pending', ...o };
+  }
+  db.deals = [
+    makeDeal({ agencyId:'agcy_maju', agentId:'agt_siti', listingId:db.listings[3].id, leadId:'led_004', salePrice:705000, currency:'MYR', closedAt:daysAgo(9), payoutStatus:'Paid', paidAt:daysAgo(2) }),
+    makeDeal({ agencyId:'agcy_maju', agentId:'agt_siti', listingId:db.listings[7].id, leadId:null, salePrice:1620000, currency:'MYR', closedAt:daysAgo(45), payoutStatus:'Paid', paidAt:daysAgo(38) }),
+    makeDeal({ agencyId:'agcy_maju', agentId:'agt_amirul', listingId:db.listings[0].id, leadId:'led_001', salePrice:960000, currency:'MYR', closedAt:daysAgo(60), payoutStatus:'Paid', paidAt:daysAgo(52) }),
+    makeDeal({ agencyId:'agcy_lion', agentId:'agt_rajesh', listingId:db.listings[13].id, leadId:'led_010', salePrice:672000, currency:'SGD', closedAt:daysAgo(5), payoutStatus:'Pending' }),
+    makeDeal({ agencyId:'agcy_lion', agentId:'agt_jasmine', listingId:db.listings[10].id, leadId:'led_008', salePrice:2790000, currency:'SGD', closedAt:daysAgo(80), payoutStatus:'Paid', paidAt:daysAgo(70) })
+  ];
+
+  db.session = { area:'login' };
+  return db;
+}
+
+let DB = loadDB() || seedDB();
+if(!loadDB()) saveDB();
+
+/* ---------- query helpers ---------- */
+function agency(id){ return DB.agencies.find(a=>a.id===id); }
+function agent(id){ return DB.agents.find(a=>a.id===id); }
+function listing(id){ return DB.listings.find(l=>l.id===id); }
+function lead(id){ return DB.leads.find(l=>l.id===id); }
+function agentsOf(agencyId){ return DB.agents.filter(a=>a.agencyId===agencyId); }
+function listingsOf(agencyId, agentId){ return DB.listings.filter(l=>l.agencyId===agencyId && (!agentId || l.agentId===agentId)); }
+function leadsOf(agencyId, agentId){ return DB.leads.filter(l=>l.agencyId===agencyId && (!agentId || l.agentId===agentId)); }
+function viewingsOf(agencyId, agentId){ return DB.viewings.filter(v=>v.agencyId===agencyId && (!agentId || v.agentId===agentId)); }
+function dealsOf(agencyId, agentId){ return DB.deals.filter(d=>d.agencyId===agencyId && (!agentId || d.agentId===agentId)); }
+function planOf(agencyId){ return PLANS[agency(agencyId).plan]; }
+
+function checkLimit(agencyId, type){
+  const plan = planOf(agencyId);
+  if(type==='agents'){ const used = agentsOf(agencyId).length; return { allowed: used < plan.maxAgents, used, limit: plan.maxAgents }; }
+  if(type==='listings'){ const used = listingsOf(agencyId).length; return { allowed: used < plan.maxListings, used, limit: plan.maxListings }; }
+  return { allowed:true, used:0, limit:Infinity };
+}
+
+/* ===================== Router / shell render ===================== */
+function go(area, page, extra){
+  DB.session.area = area;
+  if(page) DB.session.page = page;
+  if(extra) Object.assign(DB.session, extra);
+  saveDB();
+  closeSidebar();
+  render();
+  window.scrollTo(0,0);
+}
+function setSession(patch){ Object.assign(DB.session, patch); saveDB(); }
+
+let modalNode = null;
+function openModal(html, opts){
+  closeModal();
+  const wrap = document.createElement('div');
+  wrap.className = 'modal-overlay';
+  wrap.id = 'modalOverlay';
+  wrap.innerHTML = `<div class="modal ${opts&&opts.wide?'wide':''}">${html}</div>`;
+  wrap.addEventListener('mousedown', (e)=>{ if(e.target.id==='modalOverlay') closeModal(); });
+  document.body.appendChild(wrap);
+  modalNode = wrap;
+}
+function closeModal(){ if(modalNode){ modalNode.remove(); modalNode=null; } }
+function toast(msg){
+  const host = document.getElementById('toastHost');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = msg;
+  host.appendChild(t);
+  setTimeout(()=>t.remove(), 2600);
+}
+function closeSidebar(){ const s = document.querySelector('.sidebar'); if(s) s.classList.remove('open'); }
+function toggleSidebar(){ const s = document.querySelector('.sidebar'); if(s) s.classList.toggle('open'); }
+
+function badge(text, type){ return `<span class="badge badge-${type}">${esc(text)}</span>`; }
+function stageBadge(stage){
+  const map = { 'New':'slate','Contacted':'brass','Viewing Scheduled':'brass','Negotiation':'clay','Closed Won':'sage','Closed Lost':'slate' };
+  return badge(stage, map[stage]||'slate');
+}
+function planBadge(planKey){ return planKey==='pro' ? badge('PRO','brass') : badge('STARTER','slate'); }
+
+function render(){
+  const app = document.getElementById('app');
+  const area = DB.session.area;
+  if(area==='login') app.innerHTML = renderLogin();
+  else if(area==='public') app.innerHTML = renderPublicSite();
+  else if(area==='superadmin') app.innerHTML = renderShell('superadmin');
+  else if(area==='agency') app.innerHTML = renderShell('agency');
+  else if(area==='agent') app.innerHTML = renderShell('agent');
+  else app.innerHTML = renderLogin();
+}
+
+/* ---------- shared shell for the three authenticated areas ---------- */
+const NAV = {
+  superadmin: [
+    {sec:'Platform', items:[ {p:'overview',ic:'◧',label:'Overview'}, {p:'agencies',ic:'▦',label:'Agencies'}, {p:'plans',ic:'◈',label:'Plans & Pricing'} ]}
+  ],
+  agency: [
+    {sec:'Agency', items:[ {p:'overview',ic:'◧',label:'Overview'}, {p:'listings',ic:'▤',label:'Listings'}, {p:'leads',ic:'◎',label:'Leads / CRM'}, {p:'viewings',ic:'◷',label:'Viewings'} ]},
+    {sec:'Business', items:[ {p:'agents',ic:'☖',label:'Agents'}, {p:'deals',ic:'৳',label:'Deals & Commission'}, {p:'rules',ic:'⚙',label:'Commission Rules'}, {p:'reports',ic:'▣',label:'Reports'}, {p:'billing',ic:'◰',label:'Plan & Billing'} ]}
+  ],
+  agent: [
+    {sec:'My work', items:[ {p:'overview',ic:'◧',label:'Overview'}, {p:'listings',ic:'▤',label:'My Listings'}, {p:'leads',ic:'◎',label:'My Leads'}, {p:'viewings',ic:'◷',label:'My Viewings'}, {p:'commission',ic:'৳',label:'My Commission'} ]}
+  ]
+};
+const PAGE_TITLE = {
+  overview:'Overview', listings:'Listings', leads:'Leads / CRM', viewings:'Viewings', agents:'Agents',
+  deals:'Deals & Commission', rules:'Commission Rules', reports:'Reports', billing:'Plan & Billing',
+  agencies:'Agencies', plans:'Plans & Pricing', commission:'My Commission'
+};
+
+function renderShell(area){
+  const page = DB.session.page || 'overview';
+  const nav = NAV[area];
+  let name, sub, initials, agencyId, agentId;
+  if(area==='superadmin'){ name='Platform Admin'; sub='Super Admin'; initials='SA'; }
+  if(area==='agency'){ agencyId = DB.session.agencyId; const a = agency(agencyId); name=a.name; sub='Agency Admin · '+planOf(agencyId).name; initials=a.name.split(' ').slice(0,2).map(w=>w[0]).join(''); }
+  if(area==='agent'){ agentId = DB.session.agentId; const ag = agent(agentId); agencyId = ag.agencyId; name=ag.name; sub='Agent · '+agency(agencyId).name; initials=ag.name.split(' ').slice(0,2).map(w=>w[0]).join(''); }
+
+  const navHtml = nav.map(group => `
+    <div class="nav-label">${esc(group.sec)}</div>
+    ${group.items.map(it => `<div class="nav-item ${it.p===page?'active':''}" data-action="go-page" data-page="${it.p}"><span class="ic">${it.ic}</span>${esc(it.label)}</div>`).join('')}
+  `).join('');
+
+  let content = '';
+  if(area==='superadmin'){
+    if(page==='overview') content = viewSAOverview();
+    else if(page==='agencies') content = viewSAAgencies();
+    else if(page==='plans') content = viewSAPlans();
+  } else if(area==='agency'){
+    const scope = { agencyId, agentId:null };
+    if(page==='overview') content = viewOverview(scope,'agency');
+    else if(page==='listings') content = viewListings(scope,'agency');
+    else if(page==='leads') content = viewLeads(scope,'agency');
+    else if(page==='viewings') content = viewViewings(scope,'agency');
+    else if(page==='agents') content = viewAgents(agencyId);
+    else if(page==='deals') content = viewDeals(scope,'agency');
+    else if(page==='rules') content = viewCommissionRules(agencyId);
+    else if(page==='reports') content = viewReports(scope);
+    else if(page==='billing') content = viewBilling(agencyId);
+  } else if(area==='agent'){
+    const scope = { agencyId, agentId };
+    if(page==='overview') content = viewOverview(scope,'agent');
+    else if(page==='listings') content = viewListings(scope,'agent');
+    else if(page==='leads') content = viewLeads(scope,'agent');
+    else if(page==='viewings') content = viewViewings(scope,'agent');
+    else if(page==='commission') content = viewDeals(scope,'agent');
+  }
+
+  return `
+  <div class="shell">
+    <div class="sidebar" id="sidebarEl">
+      <div class="sidebar-brand"><div class="mark">E</div><div><div class="name">EstateOS</div><div class="sub">Agency Platform</div></div></div>
+      <div class="sidebar-nav">${navHtml}</div>
+      <div class="sidebar-foot">
+        <div class="user-chip"><div class="av">${esc(initials)}</div><div class="meta"><div class="nm">${esc(name)}</div><div class="rl">${esc(sub)}</div></div></div>
+        <button class="btn btn-ghost btn-block" style="color:#C7CCD6;margin-top:8px;" data-action="logout">⎋ Switch role</button>
+      </div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div><button class="btn btn-ghost hamburger" data-action="toggle-sidebar">☰</button><h1 style="display:inline">${esc(PAGE_TITLE[page]||'')}</h1><div class="crumbs">${esc(sub)}</div></div>
+        <div class="topbar-right">
+          ${area!=='superadmin' ? `<button class="btn btn-sm" data-action="go-public">View public site ↗</button>` : ''}
+        </div>
+      </div>
+      <div class="view">${content}</div>
+    </div>
+  </div>`;
+}
+
+/* ===================== Login / landing ===================== */
+function renderLogin(){
+  return `
+  <div class="land">
+    <div class="land-card">
+      <div class="land-side">
+        <div>
+          <div class="mark">E</div>
+          <h1>Run the whole agency from one screen.</h1>
+          <p>Listings, leads, viewings and commissions for real estate agencies across Malaysia, Singapore and beyond.</p>
+        </div>
+        <div>
+          <div class="feat">▤ &nbsp;Listings synced to your public site instantly</div>
+          <div class="feat">◎ &nbsp;Pipeline CRM from first inquiry to closed deal</div>
+          <div class="feat">৳ &nbsp;Automatic commission splits, agent vs. agency</div>
+        </div>
+      </div>
+      <div class="land-main">
+        <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);margin-bottom:16px;">Continue as</h3>
+        <div class="role-pick" data-action="login-public"><div class="ic">🔎</div><div><div class="t">Browse properties</div><div class="d">Public listings site — no account needed</div></div></div>
+        <div class="role-pick" data-action="login-superadmin"><div class="ic">◈</div><div><div class="t">Super Admin</div><div class="d">Platform owner — manage all agencies & plans</div></div></div>
+        <div class="role-pick" data-action="login-agency" data-id="agcy_maju"><div class="ic">▦</div><div><div class="t">Agency Admin — Maju Property Group</div><div class="d">Kuala Lumpur, Malaysia · Pro plan</div></div></div>
+        <div class="role-pick" data-action="login-agency" data-id="agcy_lion"><div class="ic">▦</div><div><div class="t">Agency Admin — Lion City Realty</div><div class="d">Singapore · Starter plan</div></div></div>
+        <div class="role-pick" data-action="login-agent" data-id="agt_amirul"><div class="ic">☖</div><div><div class="t">Agent — Amirul Hakim</div><div class="d">Maju Property Group, Kuala Lumpur</div></div></div>
+        <div class="role-pick" data-action="login-agent" data-id="agt_jasmine"><div class="ic">☖</div><div><div class="t">Agent — Jasmine Tan</div><div class="d">Lion City Realty, Singapore</div></div></div>
+        <p class="hint" style="margin-top:14px;">Demo data is preloaded and stored only in this browser. Pick any role to explore — switch anytime from the sidebar.</p>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ===================== Super Admin views ===================== */
+function platformMRR(){
+  return DB.agencies.reduce((sum,a)=> sum + (a.status==='active' ? PLANS[a.plan].priceMYR : 0), 0);
+}
+function viewSAOverview(){
+  const totalAgencies = DB.agencies.length;
+  const totalAgents = DB.agents.length;
+  const totalListings = DB.listings.length;
+  const activeListings = DB.listings.filter(l=>l.status==='Available').length;
+  const mrr = platformMRR();
+  const proCount = DB.agencies.filter(a=>a.plan==='pro').length;
+  return `
+  <div class="grid grid-4">
+    <div class="stat-card"><div class="lbl">Agencies on platform</div><div class="val">${totalAgencies}</div><div class="sub">${proCount} on Pro plan</div></div>
+    <div class="stat-card"><div class="lbl">Total agents</div><div class="val">${totalAgents}</div><div class="sub">across all agencies</div></div>
+    <div class="stat-card"><div class="lbl">Total listings</div><div class="val">${totalListings}</div><div class="sub">${activeListings} currently available</div></div>
+    <div class="stat-card"><div class="lbl">Platform MRR</div><div class="val mono">${fmtMoney(mrr,'MYR')}</div><div class="sub">monthly recurring, est.</div></div>
+  </div>
+  <div class="section-head"><h2>Agencies</h2><button class="btn btn-sm" data-action="go-page" data-page="agencies">Manage all →</button></div>
+  <div class="table-wrap"><table>
+    <tr><th>Agency</th><th>Country</th><th>Plan</th><th>Agents</th><th>Listings</th><th>Status</th></tr>
+    ${DB.agencies.map(a=>`
+      <tr>
+        <td class="tname">${esc(a.name)}</td>
+        <td>${esc(a.city)}, ${esc(a.country)}</td>
+        <td>${planBadge(a.plan)}</td>
+        <td>${agentsOf(a.id).length}</td>
+        <td>${listingsOf(a.id).length}</td>
+        <td>${a.status==='active'?badge('Active','sage'):badge('Suspended','clay')}</td>
+      </tr>`).join('')}
+  </table></div>`;
+}
+function viewSAAgencies(){
+  return `
+  <div class="toolbar"><div class="spacer"></div><button class="btn btn-brass" data-action="open-add-agency">+ Add agency</button></div>
+  <div class="table-wrap"><table>
+    <tr><th>Agency</th><th>Country</th><th>Plan</th><th>Commission rate</th><th>Agents</th><th>Listings</th><th>Status</th><th></th></tr>
+    ${DB.agencies.map(a=>`
+      <tr>
+        <td><div class="tname">${esc(a.name)}</div><div class="tsub">Joined ${fmtDate(a.createdAt)}</div></td>
+        <td>${esc(a.city)}, ${esc(a.country)}</td>
+        <td>${planBadge(a.plan)}</td>
+        <td class="mono">${a.commissionRate}%</td>
+        <td>${agentsOf(a.id).length} / ${a.plan==='pro'?'∞':PLANS.starter.maxAgents}</td>
+        <td>${listingsOf(a.id).length} / ${a.plan==='pro'?'∞':PLANS.starter.maxListings}</td>
+        <td>${a.status==='active'?badge('Active','sage'):badge('Suspended','clay')}</td>
+        <td class="row-actions">
+          <button class="btn btn-sm" data-action="toggle-plan" data-id="${a.id}">${a.plan==='pro'?'Downgrade':'Upgrade'}</button>
+          <button class="btn btn-sm ${a.status==='active'?'btn-danger':''}" data-action="toggle-agency-status" data-id="${a.id}">${a.status==='active'?'Suspend':'Reactivate'}</button>
+        </td>
+      </tr>`).join('')}
+  </table></div>`;
+}
+function viewSAPlans(){
+  return `
+  <div class="grid grid-2">
+    ${Object.values(PLANS).map(p=>`
+      <div class="card">
+        <div class="card-head"><h3>${esc(p.name)}</h3>${p.key==='pro'?badge('Most popular','brass'):''}</div>
+        <div class="prop-price" style="font-size:26px;">${fmtMoney(p.priceMYR,'MYR')}<span> / mo · or ${fmtMoney(p.priceSGD,'SGD')}</span></div>
+        <div class="divider"></div>
+        <p style="font-size:13px;line-height:1.8;">
+          Agents: <b>${p.maxAgents===Infinity?'Unlimited':p.maxAgents}</b><br>
+          Active listings: <b>${p.maxListings===Infinity?'Unlimited':p.maxListings}</b><br>
+          Advanced analytics: <b>${p.analytics?'Included':'Not included'}</b><br>
+          PDF exports (brochures, statements): <b>${p.pdfExport?'Included':'Not included'}</b><br>
+          Featured listings on public site: <b>${p.featured?'Included':'Not included'}</b>
+        </p>
+      </div>`).join('')}
+  </div>
+  <p class="hint" style="margin-top:16px;">Billing integration (Stripe / Billplz / ToyyibPay) is not yet connected — plan changes here are simulated for demo purposes.</p>`;
+}
+
+/* ===================== Overview (agency + agent share this) ===================== */
+function viewOverview(scope, mode){
+  const { agencyId, agentId } = scope;
+  const listings = listingsOf(agencyId, agentId);
+  const leads = leadsOf(agencyId, agentId);
+  const viewings = viewingsOf(agencyId, agentId).filter(v=>v.status==='Scheduled' && new Date(v.datetime) >= new Date());
+  const deals = dealsOf(agencyId, agentId);
+  const pendingComm = deals.filter(d=>d.payoutStatus==='Pending').reduce((s,d)=> s + (mode==='agent'?d.agentCommission:d.agencyCommission), 0);
+  const wonThisMonth = deals.filter(d=>{ const dt=new Date(d.closedAt); const now=new Date(); return dt.getMonth()===now.getMonth() && dt.getFullYear()===now.getFullYear(); }).length;
+  const cur = agency(agencyId).currency;
+  const plan = planOf(agencyId);
+
+  let limitsHtml = '';
+  if(mode==='agency'){
+    const lim = checkLimit(agencyId,'listings'), alim = checkLimit(agencyId,'agents');
+    limitsHtml = `
+    <div class="section-head"><h2>Plan usage</h2><span>${planBadge(agency(agencyId).plan)}</span></div>
+    <div class="grid grid-2">
+      <div class="card"><div class="lbl" style="font-size:12px;color:var(--slate);font-weight:600;">Listings used</div>
+        <div style="display:flex;justify-content:space-between;margin:8px 0 6px;font-size:13px;"><span class="mono">${lim.used} / ${lim.limit===Infinity?'∞':lim.limit}</span></div>
+        <div class="progress ${lim.limit!==Infinity && lim.used/lim.limit>0.8?'danger':''}"><div style="width:${lim.limit===Infinity?Math.min(lim.used*3,100):Math.min(100,lim.used/lim.limit*100)}%"></div></div></div>
+      <div class="card"><div class="lbl" style="font-size:12px;color:var(--slate);font-weight:600;">Agents used</div>
+        <div style="display:flex;justify-content:space-between;margin:8px 0 6px;font-size:13px;"><span class="mono">${alim.used} / ${alim.limit===Infinity?'∞':alim.limit}</span></div>
+        <div class="progress ${alim.limit!==Infinity && alim.used/alim.limit>0.8?'danger':''}"><div style="width:${alim.limit===Infinity?Math.min(alim.used*15,100):Math.min(100,alim.used/alim.limit*100)}%"></div></div></div>
+    </div>`;
+  }
+
+  return `
+  <div class="grid grid-4">
+    <div class="stat-card"><div class="lbl">${mode==='agent'?'My listings':'Active listings'}</div><div class="val">${listings.filter(l=>l.status==='Available').length}</div><div class="sub">${listings.length} total</div></div>
+    <div class="stat-card"><div class="lbl">${mode==='agent'?'My leads':'Open leads'}</div><div class="val">${leads.filter(l=>!l.stage.startsWith('Closed')).length}</div><div class="sub">${leads.length} total in pipeline</div></div>
+    <div class="stat-card"><div class="lbl">Upcoming viewings</div><div class="val">${viewings.length}</div><div class="sub">scheduled ahead</div></div>
+    <div class="stat-card"><div class="lbl">Commission pending</div><div class="val mono" style="font-size:21px;">${fmtMoney(pendingComm,cur)}</div><div class="sub">${wonThisMonth} deal(s) closed this month</div></div>
+  </div>
+  ${limitsHtml}
+  <div class="section-head"><h2>Recent leads</h2><button class="btn btn-sm" data-action="go-page" data-page="leads">View pipeline →</button></div>
+  <div class="table-wrap"><table>
+    <tr><th>Name</th><th>Property</th><th>Stage</th><th>Agent</th><th>Updated</th></tr>
+    ${leads.slice().sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt)).slice(0,6).map(l=>{
+      const lst = listing(l.listingId);
+      return `<tr><td class="tname">${esc(l.name)}</td><td>${lst?esc(lst.title):'—'}</td><td>${stageBadge(l.stage)}</td><td>${esc(agent(l.agentId).name)}</td><td>${fmtDate(l.updatedAt)}</td></tr>`;
+    }).join('') || `<tr><td colspan="5" class="empty">No leads yet.</td></tr>`}
+  </table></div>
+  <div class="section-head"><h2>Upcoming viewings</h2><button class="btn btn-sm" data-action="go-page" data-page="viewings">View all →</button></div>
+  <div class="table-wrap"><table>
+    <tr><th>Date</th><th>Property</th><th>Lead</th><th>Agent</th></tr>
+    ${viewings.slice().sort((a,b)=>new Date(a.datetime)-new Date(b.datetime)).slice(0,5).map(v=>{
+      const lst = listing(v.listingId), ld = lead(v.leadId);
+      return `<tr><td class="mono">${fmtDateTime(v.datetime)}</td><td>${lst?esc(lst.title):'—'}</td><td>${ld?esc(ld.name):'—'}</td><td>${esc(agent(v.agentId).name)}</td></tr>`;
+    }).join('') || `<tr><td colspan="4" class="empty">No upcoming viewings.</td></tr>`}
+  </table></div>`;
+}
+
+/* ===================== Listings ===================== */
+function viewListings(scope, mode){
+  const { agencyId, agentId } = scope;
+  const f = DB.session.listingFilter || {};
+  let listings = listingsOf(agencyId, agentId);
+  if(f.status) listings = listings.filter(l=>l.status===f.status);
+  if(f.type) listings = listings.filter(l=>l.listingType===f.type);
+  if(f.agent && mode==='agency') listings = listings.filter(l=>l.agentId===f.agent);
+  if(f.q) listings = listings.filter(l=> (l.title+l.city+l.state).toLowerCase().includes(f.q.toLowerCase()));
+  const cur = agency(agencyId).currency;
+  const lim = checkLimit(agencyId,'listings');
+
+  return `
+  <div class="toolbar">
+    <div class="search-box"><span class="ic">⌕</span><input placeholder="Search listings..." value="${esc(f.q||'')}" oninput="updateListingFilter('q',this.value)"></div>
+    <select onchange="updateListingFilter('status',this.value)">
+      <option value="">All status</option>
+      ${['Available','Under Offer','Sold','Rented'].map(s=>`<option value="${s}" ${f.status===s?'selected':''}>${s}</option>`).join('')}
+    </select>
+    <select onchange="updateListingFilter('type',this.value)">
+      <option value="">Sale & Rent</option>
+      <option value="sale" ${f.type==='sale'?'selected':''}>For sale</option>
+      <option value="rent" ${f.type==='rent'?'selected':''}>For rent</option>
+    </select>
+    ${mode==='agency'?`<select onchange="updateListingFilter('agent',this.value)"><option value="">All agents</option>${agentsOf(agencyId).map(a=>`<option value="${a.id}" ${f.agent===a.id?'selected':''}>${esc(a.name)}</option>`).join('')}</select>`:''}
+    <div class="spacer"></div>
+    <span class="hint mono">${lim.used}/${lim.limit===Infinity?'∞':lim.limit} used</span>
+    <button class="btn btn-brass" data-action="open-add-listing" ${!lim.allowed?'disabled title="Plan limit reached"':''}>+ Add listing</button>
+  </div>
+  ${!lim.allowed ? `<div class="card" style="border-color:var(--clay);background:var(--clay-bg);margin-bottom:16px;font-size:13px;">You've reached the Starter plan listing limit (${lim.limit}). <a style="font-weight:700;text-decoration:underline;" data-action="go-page" data-page="billing">Upgrade to Pro</a> for unlimited listings.</div>` : ''}
+  <div class="prop-grid">
+    ${listings.length ? listings.map(l=>propCard(l,mode)).join('') : `<div class="empty" style="grid-column:1/-1;"><div class="big">▤</div>No listings match these filters.</div>`}
+  </div>`;
+}
+function updateListingFilter(key,val){ DB.session.listingFilter = {...(DB.session.listingFilter||{}), [key]:val}; saveDB(); render(); }
+
+function propCard(l, mode){
+  const tagClass = l.status==='Sold'?'sold':(l.status==='Rented'?'rented':'');
+  return `
+  <div class="prop-card">
+    <div class="prop-art" style="background:linear-gradient(150deg,var(--paper3),var(--line));">
+      <span>${PROP_ICON[l.propertyType]||'🏠'}</span>
+      <div class="prop-tag ${tagClass}">${l.status.toUpperCase()}</div>
+      ${l.featured?'<div class="prop-featured">★ FEATURED</div>':''}
+    </div>
+    <div class="prop-body">
+      <div class="prop-price">${fmtMoney(l.price,l.currency)}<span>${l.listingType==='rent'?'/mo':''}</span></div>
+      <div class="prop-title">${esc(l.title)}</div>
+      <div class="prop-loc">${esc(l.city)}, ${esc(l.state)}</div>
+      <div class="prop-meta">
+        ${l.bedrooms?`<span>${l.bedrooms} bed</span>`:''}${l.bathrooms?`<span>${l.bathrooms} bath</span>`:''}<span>${l.sqft.toLocaleString()} sqft</span>
+      </div>
+      <div class="prop-foot">
+        <span class="prop-agent">${esc(agent(l.agentId).name)}</span>
+        <div class="row-actions">
+          <button class="btn btn-sm" data-action="open-edit-listing" data-id="${l.id}">Edit</button>
+          ${planOf(l.agencyId).pdfExport ? `<button class="btn btn-sm" data-action="export-brochure" data-id="${l.id}">PDF</button>` : ''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function listingFormFields(l){
+  l = l || {};
+  return `
+  <div class="field-row">
+    <div class="field"><label>Title</label><input id="f_title" value="${esc(l.title||'')}" placeholder="e.g. Mont Kiara Skyline Residence"></div>
+    <div class="field"><label>Property type</label><select id="f_propertyType">${Object.keys(PROP_ICON).map(t=>`<option ${l.propertyType===t?'selected':''}>${t}</option>`).join('')}</select></div>
+  </div>
+  <div class="field-row3">
+    <div class="field"><label>Listing type</label><select id="f_listingType"><option value="sale" ${l.listingType==='sale'?'selected':''}>For sale</option><option value="rent" ${l.listingType==='rent'?'selected':''}>For rent</option></select></div>
+    <div class="field"><label>Price</label><input id="f_price" type="number" value="${l.price||''}" placeholder="e.g. 980000"></div>
+    <div class="field"><label>Currency</label><select id="f_currency">${['MYR','SGD','USD'].map(c=>`<option ${l.currency===c?'selected':''}>${c}</option>`).join('')}</select></div>
+  </div>
+  <div class="field-row3">
+    <div class="field"><label>State / Region</label><input id="f_state" value="${esc(l.state||'')}" placeholder="e.g. Kuala Lumpur"></div>
+    <div class="field"><label>City / Area</label><input id="f_city" value="${esc(l.city||'')}" placeholder="e.g. Mont Kiara"></div>
+    <div class="field"><label>Country</label><input id="f_country" value="${esc(l.country||agency(DB.session.agencyId||(l.agencyId)).country)}" placeholder="e.g. Malaysia"></div>
+  </div>
+  <div class="field"><label>Address</label><input id="f_address" value="${esc(l.address||'')}" placeholder="Street / building name"></div>
+  <div class="field-row3">
+    <div class="field"><label>Bedrooms</label><input id="f_bedrooms" type="number" value="${l.bedrooms ?? 0}"></div>
+    <div class="field"><label>Bathrooms</label><input id="f_bathrooms" type="number" value="${l.bathrooms ?? 0}"></div>
+    <div class="field"><label>Size (sqft)</label><input id="f_sqft" type="number" value="${l.sqft||''}"></div>
+  </div>
+  <div class="field"><label>Status</label><select id="f_status">${['Available','Under Offer','Sold','Rented'].map(s=>`<option ${l.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+  <div class="field"><label>Description</label><textarea id="f_description" rows="3" placeholder="A few lines for the public listing...">${esc(l.description||'')}</textarea></div>
+  <div class="field" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="f_featured" style="width:auto;" ${l.featured?'checked':''}><label style="margin:0;text-transform:none;font-size:13px;">Feature this listing on the public site</label></div>`;
+}
+
+function openAddListingModal(){
+  const agencyId = DB.session.agencyId || agent(DB.session.agentId).agencyId;
+  const lim = checkLimit(agencyId,'listings');
+  if(!lim.allowed){ toast('⚠ Listing limit reached for your plan'); return; }
+  const agentId = DB.session.agentId || agentsOf(agencyId)[0].id;
+  openModal(`
+    <div class="modal-head"><h3>Add listing</h3><button class="btn btn-ghost btn-sm" data-action="close-modal">✕</button></div>
+    ${listingFormFields({agencyId})}
+    ${DB.session.area==='agency' ? `<div class="field"><label>Assign to agent</label><select id="f_agentId">${agentsOf(agencyId).map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('')}</select></div>` : ''}
+    <div class="modal-foot"><button class="btn" data-action="close-modal">Cancel</button><button class="btn btn-brass" data-action="save-new-listing" data-agentid="${agentId}" data-agencyid="${agencyId}">Save listing</button></div>
+  `);
+}
+function saveNewListing(agencyId, defaultAgentId){
+  const agentId = document.getElementById('f_agentId') ? document.getElementById('f_agentId').value : defaultAgentId;
+  const l = {
+    id: uid('lst'), agencyId, agentId,
+    title: document.getElementById('f_title').value || 'Untitled listing',
+    propertyType: document.getElementById('f_propertyType').value,
+    listingType: document.getElementById('f_listingType').value,
+    price: parseFloat(document.getElementById('f_price').value)||0,
+    currency: document.getElementById('f_currency').value,
+    state: document.getElementById('f_state').value,
+    city: document.getElementById('f_city').value,
+    country: document.getElementById('f_country').value,
+    address: document.getElementById('f_address').value,
+    bedrooms: parseInt(document.getElementById('f_bedrooms').value)||0,
+    bathrooms: parseInt(document.getElementById('f_bathrooms').value)||0,
+    sqft: parseInt(document.getElementById('f_sqft').value)||0,
+    status: document.getElementById('f_status').value,
+    description: document.getElementById('f_description').value,
+    featured: document.getElementById('f_featured').checked,
+    createdAt: nowISO()
+  };
+  DB.listings.push(l); saveDB(); closeModal(); render(); toast('✓ Listing added');
+}
+function openEditListingModal(id){
+  const l = listing(id);
+  openModal(`
+    <div class="modal-head"><h3>Edit listing</h3><button class="btn btn-ghost btn-sm" data-action="close-modal">✕</button></div>
+    ${listingFormFields(l)}
+    <div class="modal-foot">
+      <button class="btn btn-danger" data-action="delete-listing" data-id="${id}">Delete</button>
+      <div class="spacer"></div>
+      <button class="btn" data-action="close-modal">Cancel</button>
+      <button class="btn btn-brass" data-action="save-edit-listing" data-id="${id}">Save changes</button>
+    </div>
+  `);
+}
+function saveEditListing(id){
+  const l = listing(id);
+  Object.assign(l, {
+    title: document.getElementById('f_title').value,
+    propertyType: document.getElementById('f_propertyType').value,
+    listingType: document.getElementById('f_listingType').value,
+    price: parseFloat(document.getElementById('f_price').value)||0,
+    currency: document.getElementById('f_currency').value,
+    state: document.getElementById('f_state').value,
+    city: document.getElementById('f_city').value,
+    country: document.getElementById('f_country').value,
+    address: document.getElementById('f_address').value,
+    bedrooms: parseInt(document.getElementById('f_bedrooms').value)||0,
+    bathrooms: parseInt(document.getElementById('f_bathrooms').value)||0,
+    sqft: parseInt(document.getElementById('f_sqft').value)||0,
+    status: document.getElementById('f_status').value,
+    description: document.getElementById('f_description').value,
+    featured: document.getElementById('f_featured').checked
+  });
+  saveDB(); closeModal(); render(); toast('✓ Listing updated');
+}
+function deleteListing(id){
+  DB.listings = DB.listings.filter(l=>l.id!==id);
+  saveDB(); closeModal(); render(); toast('Listing deleted');
+}
+
+/* ===================== Leads / CRM ===================== */
+function viewLeads(scope, mode){
+  const { agencyId, agentId } = scope;
+  const leads = leadsOf(agencyId, agentId);
+  const cols = STAGES.map(stage => ({ stage, items: leads.filter(l=>l.stage===stage) }));
+  return `
+  <div class="toolbar"><div class="spacer"></div><button class="btn btn-brass" data-action="open-add-lead">+ Add lead</button></div>
+  <div class="kanban">
+    ${cols.map(c=>`
+      <div class="kanban-col">
+        <div class="kanban-col-head"><span>${esc(c.stage)}</span><span class="mono">${c.items.length}</span></div>
+        ${c.items.map(l=>`
+          <div class="kanban-card" data-action="open-lead-detail" data-id="${l.id}">
+            <div class="kn">${esc(l.name)}</div>
+            <div class="ks">${listing(l.listingId)?esc(listing(l.listingId).title):'No property'}</div>
+            <div class="ks mono">${esc(agent(l.agentId).name)}</div>
+          </div>`).join('') || `<div class="hint" style="padding:8px;">No leads</div>`}
+      </div>`).join('')}
+  </div>`;
+}
+function openAddLeadModal(){
+  const agencyId = DB.session.agencyId || agent(DB.session.agentId).agencyId;
+  const agentId = DB.session.agentId;
+  const listings = listingsOf(agencyId);
+  openModal(`
+    <div class="modal-head"><h3>Add lead</h3><button class="btn btn-ghost btn-sm" data-action="close-modal">✕</button></div>
+    <div class="field-row"><div class="field"><label>Name</label><input id="f_name" placeholder="Full name"></div><div class="field"><label>Phone</label><input id="f_phone" placeholder="+60 12-345 6789"></div></div>
+    <div class="field"><label>Email</label><input id="f_email" placeholder="name@email.com"></div>
+    <div class="field-row">
+      <div class="field"><label>Interested property</label><select id="f_listingId"><option value="">— None —</option>${listings.map(l=>`<option value="${l.id}">${esc(l.title)}</option>`).join('')}</select></div>
+      <div class="field"><label>Source</label><select id="f_source">${['Public Inquiry','Referral','Walk-in','Phone','Social Media'].map(s=>`<option>${s}</option>`).join('')}</select></div>
+    </div>
+    ${DB.session.area==='agency' ? `<div class="field"><label>Assign to agent</label><select id="f_agentId">${agentsOf(agencyId).map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('')}</select></div>` : ''}
+    <div class="modal-foot"><button class="btn" data-action="close-modal">Cancel</button><button class="btn btn-brass" data-action="save-new-lead" data-agencyid="${agencyId}" data-agentid="${agentId||''}">Save lead</button></div>
+  `);
+}
+function saveNewLead(agencyId, defaultAgentId){
+  const agentId = document.getElementById('f_agentId') ? document.getElementById('f_agentId').value : defaultAgentId;
+  const l = {
+    id: uid('led'), agencyId, agentId,
+    listingId: document.getElementById('f_listingId').value || null,
+    name: document.getElementById('f_name').value || 'Unnamed lead',
+    email: document.getElementById('f_email').value,
+    phone: document.getElementById('f_phone').value,
+    source: document.getElementById('f_source').value,
+    stage:'New', notes:[], createdAt: nowISO(), updatedAt: nowISO()
+  };
+  DB.leads.push(l); saveDB(); closeModal(); render(); toast('✓ Lead added');
+}
+function openLeadDetail(id){
+  const l = lead(id);
+  const lst = l.listingId ? listing(l.listingId) : null;
+  openModal(`
+    <div class="modal-head"><h3>${esc(l.name)}</h3><button class="btn btn-ghost btn-sm" data-action="close-modal">✕</button></div>
+    <p class="hint">${esc(l.phone)} · ${esc(l.email)} · sourced via ${esc(l.source)}</p>
+    ${lst?`<div class="tag-pill" style="margin:10px 0;">${esc(lst.title)}</div>`:''}
+    <div class="field" style="margin-top:14px;"><label>Pipeline stage</label>
+      <select id="f_stage" onchange="updateLeadStage('${id}',this.value)">${STAGES.map(s=>`<option ${l.stage===s?'selected':''}>${s}</option>`).join('')}</select>
+    </div>
+    <div class="divider"></div>
+    <label style="font-size:12px;font-weight:700;color:var(--slate);text-transform:uppercase;">Activity notes</label>
+    <div class="notes-list" style="margin-top:8px;">
+      ${l.notes.length ? l.notes.map(n=>`<div class="note-item">${esc(n.text)}<div class="nd">${fmtDate(n.date)}</div></div>`).join('') : '<div class="hint">No notes yet.</div>'}
+    </div>
+    <div class="field" style="margin-top:10px;"><input id="f_newnote" placeholder="Add a note... (e.g. called, left voicemail)"></div>
+    <div class="modal-foot"><button class="btn" data-action="schedule-viewing-from-lead" data-id="${id}">Schedule viewing</button><div class="spacer"></div><button class="btn" data-action="close-modal">Close</button><button class="btn btn-brass" data-action="add-lead-note" data-id="${id}">Add note</button></div>
+  `);
+}
+function updateLeadStage(id, stage){ const l = lead(id); l.stage = stage; l.updatedAt = nowISO(); saveDB(); render(); toast('Stage updated → '+stage); closeModal(); }
+function addLeadNote(id){
+  const text = document.getElementById('f_newnote').value.trim();
+  if(!text) return;
+  const l = lead(id);
+  l.notes.unshift({text, date: nowISO()}); l.updatedAt = nowISO();
+  saveDB(); openLeadDetail(id);
+}
+
+/* ===================== Viewings ===================== */
+function viewViewings(scope, mode){
+  const { agencyId, agentId } = scope;
+  const viewings = viewingsOf(agencyId, agentId).slice().sort((a,b)=>new Date(a.datetime)-new Date(b.datetime));
+  return `
+  <div class="toolbar"><div class="spacer"></div><button class="btn btn-brass" data-action="open-add-viewing">+ Schedule viewing</button></div>
+  <div class="table-wrap"><table>
+    <tr><th>Date & time</th><th>Property</th><th>Lead</th><th>Agent</th><th>Status</th><th>Notes</th><th></th></tr>
+    ${viewings.map(v=>{
+      const lst = listing(v.listingId), ld = lead(v.leadId);
+      return `<tr>
+        <td class="mono">${fmtDateTime(v.datetime)}</td>
+        <td>${lst?esc(lst.title):'—'}</td>
+        <td>${ld?esc(ld.name):'—'}</td>
+        <td>${esc(agent(v.agentId).name)}</td>
+        <td>${badge(v.status, v.status==='Scheduled'?'brass':(v.status==='Completed'?'sage':'slate'))}</td>
+        <td class="tsub">${esc(v.notes||'—')}</td>
+        <td class="row-actions">
+          ${v.status==='Scheduled'?`<button class="btn btn-sm" data-action="mark-viewing" data-id="${v.id}" data-status="Completed">Mark done</button><button class="btn btn-sm btn-danger" data-action="mark-viewing" data-id="${v.id}" data-status="Cancelled">Cancel</button>`:''}
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="7" class="empty">No viewings scheduled.</td></tr>`}
+  </table></div>`;
+}
+function openAddViewingModal(presetLeadId){
+  const agencyId = DB.session.agencyId || agent(DB.session.agentId).agencyId;
+  const leads = leadsOf(agencyId);
+  openModal(`
+    <div class="modal-head"><h3>Schedule viewing</h3><button class="btn btn-ghost btn-sm" data-action="close-modal">✕</button></div>
+    <div class="field"><label>Lead</label><select id="f_leadId">${leads.map(l=>`<option value="${l.id}" ${presetLeadId===l.id?'selected':''}>${esc(l.name)}</option>`).join('')}</select></div>
+    <div class="field"><label>Date & time</label><input id="f_datetime" type="datetime-local"></div>
+    <div class="field"><label>Notes</label><input id="f_vnotes" placeholder="Optional"></div>
+    <div class="modal-foot"><button class="btn" data-action="close-modal">Cancel</button><button class="btn btn-brass" data-action="save-new-viewing" data-agencyid="${agencyId}">Save</button></div>
+  `);
+}
+function saveNewViewing(agencyId){
+  const leadId = document.getElementById('f_leadId').value;
+  const ld = lead(leadId);
+  const dtVal = document.getElementById('f_datetime').value;
+  const v = { id: uid('vw'), agencyId, agentId: ld.agentId, leadId, listingId: ld.listingId, datetime: dtVal ? new Date(dtVal).toISOString() : nowISO(), status:'Scheduled', notes: document.getElementById('f_vnotes').value };
+  DB.viewings.push(v);
+  ld.stage = 'Viewing Scheduled'; ld.updatedAt = nowISO();
+  saveDB(); closeModal(); render(); toast('✓ Viewing scheduled');
+}
+function markViewing(id, status){ const v = DB.viewings.find(x=>x.id===id); v.status = status; saveDB(); render(); toast('Viewing marked: '+status); }
+
+/* ===================== Agents (agency admin only) ===================== */
+function viewAgents(agencyId){
+  const agents = agentsOf(agencyId);
+  const lim = checkLimit(agencyId,'agents');
+  return `
+  <div class="toolbar"><div class="spacer"></div><span class="hint mono">${lim.used}/${lim.limit===Infinity?'∞':lim.limit} used</span>
+    <button class="btn btn-brass" data-action="open-add-agent" ${!lim.allowed?'disabled title="Plan limit reached"':''}>+ Add agent</button></div>
+  ${!lim.allowed ? `<div class="card" style="border-color:var(--clay);background:var(--clay-bg);margin-bottom:16px;font-size:13px;">Starter plan allows up to ${lim.limit} agents. <a style="font-weight:700;text-decoration:underline;" data-action="go-page" data-page="billing">Upgrade to Pro</a> to add more.</div>` : ''}
+  <div class="grid grid-3">
+    ${agents.map(a=>{
+      const myListings = listingsOf(agencyId, a.id).length;
+      const myDeals = dealsOf(agencyId, a.id);
+      const won = myDeals.length;
+      const earned = myDeals.reduce((s,d)=>s+d.agentCommission,0);
+      return `
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="av" style="background:var(--ink);color:var(--paper);width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;">${esc(a.name.split(' ').slice(0,2).map(w=>w[0]).join(''))}</div>
+          <div><div class="tname">${esc(a.name)}</div><div class="tsub">${esc(a.email)}</div></div>
+        </div>
+        <div class="divider"></div>
+        <p style="font-size:12.5px;color:var(--slate);line-height:1.7;">
+          Listings: <b style="color:var(--ink);">${myListings}</b> &nbsp;·&nbsp; Deals closed: <b style="color:var(--ink);">${won}</b><br>
+          Commission earned: <b class="mono" style="color:var(--ink);">${fmtMoney(earned, agency(agencyId).currency)}</b>
+        </p>
+        <div class="row-actions" style="margin-top:8px;">
+          <span style="flex:1;">${a.status==='active'?badge('Active','sage'):badge('Inactive','slate')}</span>
+          <button class="btn btn-sm" data-action="toggle-agent-status" data-id="${a.id}">${a.status==='active'?'Deactivate':'Reactivate'}</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+function openAddAgentModal(){
+  const agencyId = DB.session.agencyId;
+  const lim = checkLimit(agencyId,'agents');
+  if(!lim.allowed){ toast('⚠ Agent limit reached for your plan'); return; }
+  openModal(`
+    <div class="modal-head"><h3>Add agent</h3><button class="btn btn-ghost btn-sm" data-action="close-modal">✕</button></div>
+    <div class="field"><label>Full name</label><input id="f_aname" placeholder="e.g. Nurul Izzah"></div>
+    <div class="field-row"><div class="field"><label>Email</label><input id="f_aemail" placeholder="name@agency.com"></div><div class="field"><label>Phone</label><input id="f_aphone" placeholder="+60 12-345 6789"></div></div>
+    <div class="modal-foot"><button class="btn" data-action="close-modal">Cancel</button><button class="btn btn-brass" data-action="save-new-agent" data-agencyid="${agencyId}">Save agent</button></div>
+  `);
+}
+function saveNewAgent(agencyId){
+  const a = { id: uid('agt'), agencyId, name: document.getElementById('f_aname').value || 'New agent', email: document.getElementById('f_aemail').value, phone: document.getElementById('f_aphone').value, status:'active', joinedAt: nowISO() };
+  DB.agents.push(a); saveDB(); closeModal(); render(); toast('✓ Agent added');
+}
+function toggleAgentStatus(id){ const a = agent(id); a.status = a.status==='active'?'inactive':'active'; saveDB(); render(); }
+
+/* ===================== Deals & Commission ===================== */
+function viewDeals(scope, mode){
+  const { agencyId, agentId } = scope;
+  const deals = dealsOf(agencyId, agentId).slice().sort((a,b)=>new Date(b.closedAt)-new Date(a.closedAt));
+  const cur = agency(agencyId).currency;
+  const totalEarned = deals.reduce((s,d)=>s + (mode==='agent'?d.agentCommission:d.agencyCommission), 0);
+  const pending = deals.filter(d=>d.payoutStatus==='Pending').reduce((s,d)=>s + (mode==='agent'?d.agentCommission:d.agencyCommission), 0);
+  return `
+  <div class="grid grid-3" style="margin-bottom:6px;">
+    <div class="stat-card"><div class="lbl">Deals closed</div><div class="val">${deals.length}</div></div>
+    <div class="stat-card"><div class="lbl">${mode==='agent'?'My commission earned':'Total commission'}</div><div class="val mono" style="font-size:21px;">${fmtMoney(totalEarned,cur)}</div></div>
+    <div class="stat-card"><div class="lbl">Pending payout</div><div class="val mono" style="font-size:21px;">${fmtMoney(pending,cur)}</div></div>
+  </div>
+  <div class="toolbar" style="margin-top:18px;"><div class="spacer"></div>${mode==='agency'?'<button class="btn btn-brass" data-action="open-add-deal">+ Record closed deal</button>':''}</div>
+  <div class="table-wrap"><table>
+    <tr><th>Property</th><th>Agent</th><th>Sale price</th><th>Rate</th><th>Agency comm.</th><th>Agent comm.</th><th>Closed</th><th>Payout</th><th></th></tr>
+    ${deals.map(d=>{
+      const lst = listing(d.listingId);
+      return `<tr>
+        <td class="tname">${lst?esc(lst.title):'—'}</td>
+        <td>${esc(agent(d.agentId).name)}</td>
+        <td class="mono">${fmtMoney(d.salePrice,d.currency)}</td>
+        <td class="mono">${d.commissionRate}%</td>
+        <td class="mono">${fmtMoney(d.agencyCommission,d.currency)}</td>
+        <td class="mono">${fmtMoney(d.agentCommission,d.currency)}</td>
+        <td>${fmtDate(d.closedAt)}</td>
+        <td>${d.payoutStatus==='Paid'?badge('Paid','sage'):badge('Pending','brass')}</td>
+        <td class="row-actions">
+          ${mode==='agency' && d.payoutStatus==='Pending' ? `<button class="btn btn-sm" data-action="mark-deal-paid" data-id="${d.id}">Mark paid</button>` : ''}
+          ${planOf(agencyId).pdfExport ? `<button class="btn btn-sm" data-action="export-commission" data-id="${d.id}">PDF</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="9" class="empty">No deals recorded yet.</td></tr>`}
+  </table></div>`;
+}
+function openAddDealModal(){
+  const agencyId = DB.session.agencyId;
+  const a = agency(agencyId);
+  const listings = listingsOf(agencyId);
+  openModal(`
+    <div class="modal-head"><h3>Record closed deal</h3><button class="btn btn-ghost btn-sm" data-action="close-modal">✕</button></div>
+    <div class="field"><label>Property</label><select id="f_dlisting" onchange="prefillDealAgent(this.value)">${listings.map(l=>`<option value="${l.id}" data-agentid="${l.agentId}" data-currency="${l.currency}">${esc(l.title)}</option>`).join('')}</select></div>
+    <div class="field-row">
+      <div class="field"><label>Agent</label><select id="f_dagent">${agentsOf(agencyId).map(ag=>`<option value="${ag.id}">${esc(ag.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Sale price</label><input id="f_dprice" type="number" placeholder="e.g. 980000"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Commission rate (%)</label><input id="f_drate" type="number" step="0.1" value="${a.commissionRate}"></div>
+      <div class="field"><label>Agent split (%)</label><input id="f_dsplit" type="number" step="1" value="${a.agentSplit}"></div>
+    </div>
+    <p class="hint">Defaults come from your Commission Rules — adjust per-deal if needed.</p>
+    <div class="modal-foot"><button class="btn" data-action="close-modal">Cancel</button><button class="btn btn-brass" data-action="save-new-deal" data-agencyid="${agencyId}" data-currency="${a.currency}">Save deal</button></div>
+  `);
+}
+function prefillDealAgent(listingId){
+  const opt = document.querySelector(`#f_dlisting option[value="${listingId}"]`);
+  if(opt) document.getElementById('f_dagent').value = opt.dataset.agentid;
+}
+function saveNewDeal(agencyId, currency){
+  const salePrice = parseFloat(document.getElementById('f_dprice').value)||0;
+  const rate = parseFloat(document.getElementById('f_drate').value)||0;
+  const split = parseFloat(document.getElementById('f_dsplit').value)||0;
+  const agencyCommission = salePrice * rate/100;
+  const agentCommission = agencyCommission * split/100;
+  const listingId = document.getElementById('f_dlisting').value;
+  const d = { id: uid('deal'), agencyId, agentId: document.getElementById('f_dagent').value, listingId, leadId:null,
+    salePrice, currency, commissionRate:rate, agentSplit:split, agencyCommission, agentCommission, payoutStatus:'Pending', closedAt: nowISO() };
+  DB.deals.push(d);
+  const lst = listing(listingId); if(lst) lst.status = lst.listingType==='rent' ? 'Rented' : 'Sold';
+  saveDB(); closeModal(); render(); toast('✓ Deal recorded — '+fmtMoney(agentCommission,currency)+' agent commission');
+}
+function markDealPaid(id){ const d = DB.deals.find(x=>x.id===id); d.payoutStatus='Paid'; d.paidAt=nowISO(); saveDB(); render(); toast('✓ Marked as paid'); }
+
+/* ===================== Commission Rules ===================== */
+function viewCommissionRules(agencyId){
+  const a = agency(agencyId);
+  return `
+  <div class="card" style="max-width:480px;">
+    <h3 style="margin-bottom:14px;">Default commission settings</h3>
+    <div class="field"><label>Agency commission rate (% of sale/rental price)</label><input id="r_rate" type="number" step="0.1" value="${a.commissionRate}"></div>
+    <div class="field"><label>Agent split (% of agency commission paid to the closing agent)</label><input id="r_split" type="number" step="1" value="${a.agentSplit}"></div>
+    <p class="hint">Example: on a ${fmtMoney(1000000,a.currency)} sale at ${a.commissionRate}% commission, the agency earns ${fmtMoney(1000000*a.commissionRate/100,a.currency)}, of which the closing agent receives ${a.agentSplit}%.</p>
+    <button class="btn btn-brass" style="margin-top:10px;" data-action="save-commission-rules" data-agencyid="${agencyId}">Save settings</button>
+  </div>`;
+}
+function saveCommissionRules(agencyId){
+  const a = agency(agencyId);
+  a.commissionRate = parseFloat(document.getElementById('r_rate').value)||a.commissionRate;
+  a.agentSplit = parseFloat(document.getElementById('r_split').value)||a.agentSplit;
+  saveDB(); render(); toast('✓ Commission rules saved');
+}
+
+/* ===================== Billing ===================== */
+function viewBilling(agencyId){
+  const a = agency(agencyId);
+  const plan = planOf(agencyId);
+  return `
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-head"><h3>Current plan</h3>${planBadge(a.plan)}</div>
+      <div class="prop-price" style="font-size:24px;">${fmtMoney(plan.priceMYR,'MYR')}<span> /mo</span></div>
+      <p style="font-size:13px;line-height:1.8;margin-top:10px;">
+        Agents: <b>${agentsOf(agencyId).length} / ${plan.maxAgents===Infinity?'∞':plan.maxAgents}</b><br>
+        Listings: <b>${listingsOf(agencyId).length} / ${plan.maxListings===Infinity?'∞':plan.maxListings}</b><br>
+        Analytics & reports: <b>${plan.analytics?'Yes':'No'}</b><br>
+        PDF exports: <b>${plan.pdfExport?'Yes':'No'}</b>
+      </p>
+      ${a.plan==='starter' ? `<button class="btn btn-brass btn-block" style="margin-top:14px;" data-action="upgrade-plan" data-id="${agencyId}">Upgrade to Pro — ${fmtMoney(PLANS.pro.priceMYR,'MYR')}/mo</button>` : `<button class="btn btn-block" style="margin-top:14px;" data-action="downgrade-plan" data-id="${agencyId}">Downgrade to Starter</button>`}
+      <p class="hint" style="margin-top:10px;">Payment gateway (Stripe / Billplz / ToyyibPay) not yet connected — plan changes are simulated.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:12px;">Compare plans</h3>
+      ${Object.values(PLANS).map(p=>`<div style="padding:10px 0;border-bottom:1px solid var(--line);"><b>${p.name}</b> — ${fmtMoney(p.priceMYR,'MYR')}/mo · ${p.maxAgents===Infinity?'Unlimited':p.maxAgents} agents · ${p.maxListings===Infinity?'Unlimited':p.maxListings} listings</div>`).join('')}
+    </div>
+  </div>`;
+}
+function upgradePlan(id){ agency(id).plan='pro'; saveDB(); render(); toast('✓ Upgraded to Pro'); }
+function downgradePlan(id){ agency(id).plan='starter'; saveDB(); render(); toast('Downgraded to Starter'); }
+
+/* ===================== Reports ===================== */
+function svgBarChart(items, opts){
+  opts = opts || {};
+  const w = opts.width || 560, h = opts.height || 220, pad = 36;
+  const max = Math.max(1, ...items.map(i=>i.value));
+  const bw = (w - pad*2) / items.length;
+  const bars = items.map((it,i)=>{
+    const bh = (it.value/max) * (h - pad*2);
+    const x = pad + i*bw + bw*0.18;
+    const y = h - pad - bh;
+    const bwidth = bw*0.64;
+    return `<rect x="${x}" y="${y}" width="${bwidth}" height="${bh}" rx="3" fill="${opts.color||'var(--brass)'}"></rect>
+      <text x="${x+bwidth/2}" y="${h-pad+16}" text-anchor="middle" font-size="10.5" fill="var(--slate)">${esc(it.label)}</text>
+      <text x="${x+bwidth/2}" y="${y-7}" text-anchor="middle" font-size="10.5" fill="var(--ink)" font-weight="600">${it.display!=null?it.display:it.value}</text>`;
+  }).join('');
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" xmlns="http://www.w3.org/2000/svg">
+    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="var(--line)" stroke-width="1"></line>
+    ${bars}
+  </svg>`;
+}
+function viewReports(scope){
+  const { agencyId } = scope;
+  const a = agency(agencyId);
+  if(!planOf(agencyId).analytics){
+    return `<div class="card" style="text-align:center;padding:50px 20px;"><div style="font-size:34px;">▣</div><h3 style="margin-top:10px;">Analytics is a Pro feature</h3><p class="hint" style="margin-top:6px;">Upgrade your plan to unlock revenue and pipeline reports.</p><button class="btn btn-brass" style="margin-top:14px;" data-action="go-page" data-page="billing">View plans →</button></div>`;
+  }
+  const months = [];
+  for(let i=5;i>=0;i--){ const d=new Date(); d.setMonth(d.getMonth()-i); months.push({ key:d.getFullYear()+'-'+d.getMonth(), label:d.toLocaleDateString('en-GB',{month:'short'}) }); }
+  const deals = dealsOf(agencyId);
+  const revByMonth = months.map(m=>{
+    const sum = deals.filter(d=>{ const dt=new Date(d.closedAt); return (dt.getFullYear()+'-'+dt.getMonth())===m.key; }).reduce((s,d)=>s+d.agencyCommission,0);
+    return { label:m.label, value: sum, display: Math.round(sum/1000)+'k' };
+  });
+  const leads = leadsOf(agencyId);
+  const funnel = STAGES.map(s=>({ label: s.replace('Closed ','').replace('Scheduled','Sched.'), value: leads.filter(l=>l.stage===s).length }));
+  return `
+  <div class="section-head"><h2>Commission revenue — last 6 months</h2></div>
+  <div class="card">${svgBarChart(revByMonth,{color:'var(--brass)'})}</div>
+  <div class="section-head"><h2>Lead pipeline funnel</h2></div>
+  <div class="card">${svgBarChart(funnel,{color:'var(--sage)'})}</div>`;
+}
+
+/* ===================== Public property site ===================== */
+function viewSummaryListing(l){ return l; }
+function renderPublicSite(){
+  const sub = DB.session.publicSub || 'browse';
+  if(sub==='detail') return renderPublicDetail();
+  const f = DB.session.pubFilter || {};
+  let listings = DB.listings.filter(l=>l.status==='Available' || l.status==='Under Offer');
+  if(f.type) listings = listings.filter(l=>l.listingType===f.type);
+  if(f.country) listings = listings.filter(l=>l.country===f.country);
+  if(f.q) listings = listings.filter(l=>(l.title+l.city+l.state).toLowerCase().includes(f.q.toLowerCase()));
+  listings = listings.slice().sort((a,b)=>(b.featured-a.featured));
+  const countries = [...new Set(DB.listings.map(l=>l.country))];
+  return `
+  <div class="pub-topnav">
+    <div class="brandnm"><div class="mark">E</div>EstateOS</div>
+    <button class="btn btn-sm" data-action="go-login">← Back to login</button>
+  </div>
+  <div class="pub-hero">
+    <h1>Find your next home or investment across Malaysia, Singapore & beyond.</h1>
+    <p>Live listings from agencies on the EstateOS network.</p>
+    <div class="pub-search">
+      <input placeholder="Search by city, area or title..." value="${esc(f.q||'')}" oninput="updatePubFilter('q',this.value)">
+      <select onchange="updatePubFilter('type',this.value)">
+        <option value="">For sale & rent</option>
+        <option value="sale" ${f.type==='sale'?'selected':''}>For sale</option>
+        <option value="rent" ${f.type==='rent'?'selected':''}>For rent</option>
+      </select>
+      <select onchange="updatePubFilter('country',this.value)">
+        <option value="">All countries</option>
+        ${countries.map(c=>`<option ${f.country===c?'selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>
+  </div>
+  <div class="pub-body">
+    <p class="hint" style="margin-bottom:14px;">${listings.length} listing(s) found</p>
+    <div class="prop-grid">
+      ${listings.map(l=>`
+        <div class="prop-card" data-action="open-public-listing" data-id="${l.id}" style="cursor:pointer;">
+          <div class="prop-art" style="background:linear-gradient(150deg,var(--paper3),var(--line));">
+            <span>${PROP_ICON[l.propertyType]||'🏠'}</span>
+            <div class="prop-tag">${l.listingType==='rent'?'FOR RENT':'FOR SALE'}</div>
+            ${l.featured?'<div class="prop-featured">★ FEATURED</div>':''}
+          </div>
+          <div class="prop-body">
+            <div class="prop-price">${fmtMoney(l.price,l.currency)}<span>${l.listingType==='rent'?'/mo':''}</span></div>
+            <div class="prop-title">${esc(l.title)}</div>
+            <div class="prop-loc">${esc(l.city)}, ${esc(l.state)}</div>
+            <div class="prop-meta">${l.bedrooms?`<span>${l.bedrooms} bed</span>`:''}${l.bathrooms?`<span>${l.bathrooms} bath</span>`:''}<span>${l.sqft.toLocaleString()} sqft</span></div>
+          </div>
+        </div>`).join('') || `<div class="empty" style="grid-column:1/-1;">No listings match your search.</div>`}
+    </div>
+  </div>`;
+}
+function updatePubFilter(key,val){ DB.session.pubFilter = {...(DB.session.pubFilter||{}), [key]:val}; saveDB(); render(); }
+function openPublicListing(id){ DB.session.publicSub='detail'; DB.session.publicListingId=id; saveDB(); render(); window.scrollTo(0,0); }
+function renderPublicDetail(){
+  const l = listing(DB.session.publicListingId);
+  if(!l) return renderPublicSite();
+  const ag = agent(l.agentId);
+  return `
+  <div class="pub-topnav">
+    <div class="brandnm"><div class="mark">E</div>EstateOS</div>
+    <button class="btn btn-sm" data-action="back-to-browse">← Back to listings</button>
+  </div>
+  <div class="pub-body">
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="prop-art" style="height:260px;border-radius:10px;background:linear-gradient(150deg,var(--paper3),var(--line));font-size:64px;">${PROP_ICON[l.propertyType]||'🏠'}</div>
+        <h2 style="margin-top:16px;">${esc(l.title)}</h2>
+        <p class="hint" style="margin-top:4px;">${esc(l.address)}, ${esc(l.city)}, ${esc(l.state)}, ${esc(l.country)}</p>
+        <div class="prop-price" style="font-size:26px;margin-top:12px;">${fmtMoney(l.price,l.currency)}<span>${l.listingType==='rent'?'/mo':''}</span></div>
+        <div class="prop-meta" style="margin-top:10px;font-size:13px;">${l.bedrooms?`<span>${l.bedrooms} bedrooms</span>`:''}${l.bathrooms?`<span>${l.bathrooms} bathrooms</span>`:''}<span>${l.sqft.toLocaleString()} sqft</span></div>
+        <div class="divider"></div>
+        <p style="font-size:13.5px;line-height:1.7;">${esc(l.description)}</p>
+        <div class="divider"></div>
+        <p class="hint">Listed by <b style="color:var(--ink);">${esc(ag.name)}</b></p>
+      </div>
+      <div class="card">
+        <h3>Enquire about this property</h3>
+        <p class="hint" style="margin-top:4px;margin-bottom:14px;">Send your details and the listing agent will contact you.</p>
+        <div class="field"><label>Full name</label><input id="pf_name" placeholder="Your name"></div>
+        <div class="field-row"><div class="field"><label>Email</label><input id="pf_email" placeholder="you@email.com"></div><div class="field"><label>Phone</label><input id="pf_phone" placeholder="+60 12-345 6789"></div></div>
+        <div class="field"><label>Message</label><textarea id="pf_msg" rows="3" placeholder="I'm interested in this property...">${''}</textarea></div>
+        <button class="btn btn-brass btn-block" data-action="submit-inquiry" data-id="${l.id}">Send enquiry</button>
+      </div>
+    </div>
+  </div>`;
+}
+function submitInquiry(listingId){
+  const l = listing(listingId);
+  const name = document.getElementById('pf_name').value.trim();
+  if(!name){ toast('⚠ Please enter your name'); return; }
+  const newLead = {
+    id: uid('led'), agencyId:l.agencyId, agentId:l.agentId, listingId:l.id,
+    name, email: document.getElementById('pf_email').value, phone: document.getElementById('pf_phone').value,
+    source:'Public Inquiry', stage:'New',
+    notes: document.getElementById('pf_msg').value ? [{text:document.getElementById('pf_msg').value, date:nowISO()}] : [],
+    createdAt: nowISO(), updatedAt: nowISO()
+  };
+  DB.leads.push(newLead); saveDB();
+  toast('✓ Enquiry sent — the agent will be in touch shortly');
+  DB.session.publicSub='browse'; saveDB(); render(); window.scrollTo(0,0);
+}
+
+/* ===================== PDF export (jsPDF) ===================== */
+function exportBrochurePDF(id){
+  const l = listing(id), ag = agent(l.agentId), a = agency(l.agencyId);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.text(l.title, 14, 20);
+  doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text(`${l.address}, ${l.city}, ${l.state}, ${l.country}`, 14, 29);
+  doc.setFontSize(16); doc.setFont('helvetica','bold');
+  doc.text(fmtMoney(l.price, l.currency) + (l.listingType==='rent'?' / month':''), 14, 40);
+  doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text(`${l.propertyType}  ·  ${l.bedrooms} bed  ·  ${l.bathrooms} bath  ·  ${l.sqft.toLocaleString()} sqft  ·  ${l.status}`, 14, 48);
+  doc.text(doc.splitTextToSize(l.description||'', 180), 14, 60);
+  doc.setFontSize(10); doc.setTextColor(110);
+  doc.text(`Listing agent: ${ag.name}  ·  ${ag.email}  ·  ${ag.phone}`, 14, 110);
+  doc.text(`${a.name}  ·  Generated by EstateOS`, 14, 117);
+  doc.save(`brochure-${l.id}.pdf`);
+  toast('✓ Brochure PDF downloaded');
+}
+function exportCommissionPDF(id){
+  const d = DB.deals.find(x=>x.id===id), l = listing(d.listingId), ag = agent(d.agentId), a = agency(d.agencyId);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(18); doc.setFont('helvetica','bold'); doc.text('Commission Statement', 14, 20);
+  doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text(`${a.name}`, 14, 29);
+  doc.text(`Closed: ${fmtDate(d.closedAt)}`, 14, 35);
+  doc.setFontSize(12);
+  const rows = [
+    ['Property', l ? l.title : '—'],
+    ['Agent', ag.name],
+    ['Sale price', fmtMoney(d.salePrice, d.currency)],
+    ['Commission rate', d.commissionRate + '%'],
+    ['Agency commission', fmtMoney(d.agencyCommission, d.currency)],
+    ['Agent split', d.agentSplit + '%'],
+    ['Agent commission', fmtMoney(d.agentCommission, d.currency)],
+    ['Payout status', d.payoutStatus]
+  ];
+  let y = 50;
+  rows.forEach(r=>{ doc.setFont('helvetica','bold'); doc.text(r[0]+':', 14, y); doc.setFont('helvetica','normal'); doc.text(String(r[1]), 70, y); y += 8; });
+  doc.setFontSize(9); doc.setTextColor(130);
+  doc.text('Generated by EstateOS', 14, y+10);
+  doc.save(`commission-${d.id}.pdf`);
+  toast('✓ Commission statement downloaded');
+}
+
+/* ===================== Auth / role-switch handlers ===================== */
+function loginPublic(){ DB.session = { area:'public', publicSub:'browse' }; saveDB(); render(); }
+function loginSuperAdmin(){ DB.session = { area:'superadmin', page:'overview' }; saveDB(); render(); }
+function loginAgency(id){ DB.session = { area:'agency', agencyId:id, page:'overview' }; saveDB(); render(); }
+function loginAgent(id){ DB.session = { area:'agent', agentId:id, page:'overview' }; saveDB(); render(); }
+function logout(){ DB.session = { area:'login' }; saveDB(); render(); }
+function goPublic(){ DB.session.area='public'; DB.session.publicSub='browse'; saveDB(); render(); window.scrollTo(0,0); }
+function goLogin(){ DB.session = { area:'login' }; saveDB(); render(); }
+function backToBrowse(){ DB.session.publicSub='browse'; saveDB(); render(); window.scrollTo(0,0); }
+
+/* ===================== Super admin agency actions ===================== */
+function togglePlan(id){ const a = agency(id); a.plan = a.plan==='pro' ? 'starter' : 'pro'; saveDB(); render(); toast('Plan changed → '+a.plan); }
+function toggleAgencyStatus(id){ const a = agency(id); a.status = a.status==='active' ? 'suspended' : 'active'; saveDB(); render(); toast('Agency '+a.status); }
+function openAddAgencyModal(){
+  openModal(`
+    <div class="modal-head"><h3>Add agency</h3><button class="btn btn-ghost btn-sm" data-action="close-modal">✕</button></div>
+    <div class="field"><label>Agency name</label><input id="g_name" placeholder="e.g. Skyline Realty"></div>
+    <div class="field-row"><div class="field"><label>Country</label><input id="g_country" placeholder="e.g. Malaysia"></div><div class="field"><label>City</label><input id="g_city" placeholder="e.g. Kuala Lumpur"></div></div>
+    <div class="field-row"><div class="field"><label>Currency</label><select id="g_currency">${['MYR','SGD','USD'].map(c=>`<option>${c}</option>`).join('')}</select></div><div class="field"><label>Plan</label><select id="g_plan"><option value="starter">Starter</option><option value="pro">Pro</option></select></div></div>
+    <div class="modal-foot"><button class="btn" data-action="close-modal">Cancel</button><button class="btn btn-brass" data-action="save-new-agency">Save agency</button></div>
+  `);
+}
+function saveNewAgency(){
+  const a = { id: uid('agcy'), name: document.getElementById('g_name').value || 'New agency', country: document.getElementById('g_country').value, city: document.getElementById('g_city').value, currency: document.getElementById('g_currency').value, plan: document.getElementById('g_plan').value, status:'active', commissionRate:2.0, agentSplit:65, createdAt: nowISO() };
+  DB.agencies.push(a); saveDB(); closeModal(); render(); toast('✓ Agency added');
+}
+
+/* ===================== Global click dispatcher ===================== */
+document.addEventListener('click', function(e){
+  const t = e.target.closest('[data-action]');
+  if(!t) return;
+  const action = t.dataset.action;
+  const id = t.dataset.id;
+  switch(action){
+    case 'go-page': go(DB.session.area, t.dataset.page); break;
+    case 'go-public': goPublic(); break;
+    case 'go-login': goLogin(); break;
+    case 'back-to-browse': backToBrowse(); break;
+    case 'logout': logout(); break;
+    case 'toggle-sidebar': toggleSidebar(); break;
+    case 'close-modal': closeModal(); break;
+
+    case 'login-public': loginPublic(); break;
+    case 'login-superadmin': loginSuperAdmin(); break;
+    case 'login-agency': loginAgency(id); break;
+    case 'login-agent': loginAgent(id); break;
+
+    case 'open-add-listing': openAddListingModal(); break;
+    case 'open-edit-listing': openEditListingModal(id); break;
+    case 'save-new-listing': saveNewListing(t.dataset.agencyid, t.dataset.agentid); break;
+    case 'save-edit-listing': saveEditListing(id); break;
+    case 'delete-listing': deleteListing(id); break;
+    case 'export-brochure': exportBrochurePDF(id); break;
+
+    case 'open-add-lead': openAddLeadModal(); break;
+    case 'save-new-lead': saveNewLead(t.dataset.agencyid, t.dataset.agentid); break;
+    case 'open-lead-detail': openLeadDetail(id); break;
+    case 'add-lead-note': addLeadNote(id); break;
+    case 'schedule-viewing-from-lead': closeModal(); openAddViewingModal(id); break;
+
+    case 'open-add-viewing': openAddViewingModal(); break;
+    case 'save-new-viewing': saveNewViewing(t.dataset.agencyid); break;
+    case 'mark-viewing': markViewing(id, t.dataset.status); break;
+
+    case 'open-add-agent': openAddAgentModal(); break;
+    case 'save-new-agent': saveNewAgent(t.dataset.agencyid); break;
+    case 'toggle-agent-status': toggleAgentStatus(id); break;
+
+    case 'open-add-deal': openAddDealModal(); break;
+    case 'save-new-deal': saveNewDeal(t.dataset.agencyid, t.dataset.currency); break;
+    case 'mark-deal-paid': markDealPaid(id); break;
+    case 'export-commission': exportCommissionPDF(id); break;
+
+    case 'save-commission-rules': saveCommissionRules(t.dataset.agencyid); break;
+    case 'upgrade-plan': upgradePlan(id); break;
+    case 'downgrade-plan': downgradePlan(id); break;
+
+    case 'open-add-agency': openAddAgencyModal(); break;
+    case 'save-new-agency': saveNewAgency(); break;
+    case 'toggle-plan': togglePlan(id); break;
+    case 'toggle-agency-status': toggleAgencyStatus(id); break;
+
+    case 'open-public-listing': openPublicListing(id); break;
+    case 'submit-inquiry': submitInquiry(id); break;
+  }
+});
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
+
+/* ===================== Init ===================== */
+render();
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+</script>
+</body>
+</html>

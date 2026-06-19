@@ -1,0 +1,12 @@
+{
+  "name": "EstateOS — Real Estate Agency Platform",
+  "short_name": "EstateOS",
+  "description": "Listings, CRM, agents and commissions for real estate agencies.",
+  "start_url": "./estateos.html",
+  "display": "standalone",
+  "background_color": "#F7F4EC",
+  "theme_color": "#14181F",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
