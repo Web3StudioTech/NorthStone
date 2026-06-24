@@ -1,4 +1,4 @@
-const CACHE_NAME = 'estateos-v1';
+const CACHE_NAME = 'northstone-v1';
 const ASSETS = ['index.html', 'manifest.json', 'icon.svg'];
 
 self.addEventListener('install', (event) => {

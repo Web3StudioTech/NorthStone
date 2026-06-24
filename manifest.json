@@ -1,11 +1,11 @@
 {
-  "name": "EstateOS — Real Estate Agency Platform",
-  "short_name": "EstateOS",
-  "description": "Listings, CRM, agents and commissions for real estate agencies.",
+  "name": "NorthStone — Real Estate Software",
+  "short_name": "NorthStone",
+  "description": "Full-suite real estate agency software: listings, CRM, agents and commissions.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#F7F4EC",
-  "theme_color": "#14181F",
+  "background_color": "#F4F8FF",
+  "theme_color": "#0C1D3E",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
